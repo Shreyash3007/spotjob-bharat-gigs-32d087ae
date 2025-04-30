@@ -71,9 +71,9 @@ const MapView = () => {
         el.style.fontWeight = 'bold';
         el.style.cursor = 'pointer';
         
-        // Use actual coordinates if available, otherwise use random locations around India
-        const lng = job.location?.coordinates?.lng || 78.9629 + (Math.random() * 10 - 5);
-        const lat = job.location?.coordinates?.lat || 20.5937 + (Math.random() * 10 - 5);
+        // Use the job's actual location data
+        const lng = job.location.lng;
+        const lat = job.location.lat;
         
         // Create and add the marker
         const marker = new mapboxgl.Marker(el)
