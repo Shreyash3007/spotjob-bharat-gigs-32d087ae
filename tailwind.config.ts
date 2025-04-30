@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,13 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				spotjob: {
+					purple: '#8B5CF6',
+					lightPurple: '#E5DEFF',
+					orange: '#F97316',
+					blue: '#0EA5E9',
+					gray: '#8E9196'
 				}
 			},
 			borderRadius: {
@@ -84,11 +92,27 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'swipe-right': {
+					'0%': { transform: 'translateX(0) rotate(0)' },
+					'100%': { transform: 'translateX(200px) rotate(15deg)', opacity: '0' }
+				},
+				'swipe-left': {
+					'0%': { transform: 'translateX(0) rotate(0)' },
+					'100%': { transform: 'translateX(-200px) rotate(-15deg)', opacity: '0' }
+				},
+				'bounce-in': {
+					'0%': { transform: 'scale(0.8)', opacity: '0' },
+					'70%': { transform: 'scale(1.05)', opacity: '1' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'swipe-right': 'swipe-right 0.5s forwards',
+				'swipe-left': 'swipe-left 0.5s forwards',
+				'bounce-in': 'bounce-in 0.5s ease-out'
 			}
 		}
 	},
