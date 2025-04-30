@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { useApp } from "@/context/AppContext";
@@ -12,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { JobCategory } from "@/types";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, MapPin } from "lucide-react";
 
 const Index = () => {
   const { filteredJobs, setJobFilters } = useApp();
