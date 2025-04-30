@@ -5,59 +5,92 @@ import { useApp } from "@/context/AppContext";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-
-declare global {
-  interface Window {
-    google: any;
-    initMap: () => void;
-  }
-}
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 const MapView = () => {
   const { filteredJobs, user } = useApp();
   const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const [markers, setMarkers] = useState<google.maps.Marker[]>([]);
+  const [map, setMap] = useState<mapboxgl.Map | null>(null);
+  const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
-  // Map initialization
+  // Initialize Mapbox
   useEffect(() => {
-    // Mock Google Maps implementation since we can't load the real API here
-    const mockLoadGoogleMaps = () => {
-      // Create a mock map container
-      if (mapRef.current) {
-        const mockMapContainer = document.createElement("div");
-        mockMapContainer.className = "h-full w-full bg-gray-200 relative";
-        mockMapContainer.style.backgroundImage = "url('https://maps.googleapis.com/maps/api/staticmap?center=18.5204,73.8567&zoom=13&size=600x400&key=YOUR_API_KEY')";
-        mockMapContainer.style.backgroundSize = "cover";
-        mockMapContainer.style.backgroundPosition = "center";
+    // Set Mapbox access token
+    mapboxgl.accessToken = "pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw";
+    
+    // Create map instance if mapRef is available and no map exists yet
+    if (mapRef.current && !map) {
+      // Initialize map centered on India
+      const newMap = new mapboxgl.Map({
+        container: mapRef.current,
+        style: "mapbox://styles/mapbox/streets-v11",
+        center: [78.9629, 20.5937], // Center of India
+        zoom: 4,
+      });
+
+      // Add navigation controls
+      newMap.addControl(new mapboxgl.NavigationControl(), "top-right");
+      
+      // Set map loaded state when map is ready
+      newMap.on("load", () => {
+        setIsMapLoaded(true);
+        setMap(newMap);
+      });
+    }
+
+    return () => {
+      // Clean up map when component unmounts
+      if (map) map.remove();
+    };
+  }, [mapRef]);
+
+  // Add job markers when map and jobs are loaded
+  useEffect(() => {
+    if (map && isMapLoaded && filteredJobs.length > 0) {
+      // Remove any existing markers
+      markers.forEach(marker => marker.remove());
+      const newMarkers: mapboxgl.Marker[] = [];
+
+      // Create markers for each job with random positions (for demo purposes)
+      filteredJobs.forEach((job, index) => {
+        // Create a custom marker element
+        const el = document.createElement('div');
+        el.className = 'w-6 h-6 bg-spotjob-purple rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:scale-110 transition-all';
+        el.textContent = (index + 1).toString();
+        el.style.width = '24px';
+        el.style.height = '24px';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.backgroundColor = '#6559d2';
+        el.style.color = 'white';
+        el.style.borderRadius = '50%';
+        el.style.fontWeight = 'bold';
+        el.style.cursor = 'pointer';
         
-        // Create job markers
-        const jobMarkerContainer = document.createElement("div");
-        jobMarkerContainer.className = "absolute inset-0";
-        mockMapContainer.appendChild(jobMarkerContainer);
+        // Use actual coordinates if available, otherwise use random locations around India
+        const lng = job.location?.coordinates?.lng || 78.9629 + (Math.random() * 10 - 5);
+        const lat = job.location?.coordinates?.lat || 20.5937 + (Math.random() * 10 - 5);
         
-        filteredJobs.forEach((job, index) => {
-          const marker = document.createElement("div");
-          marker.className = "absolute w-6 h-6 bg-spotjob-purple rounded-full flex items-center justify-center text-white text-xs font-bold transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-110 transition-all";
-          marker.style.left = `${20 + Math.random() * 60}%`;
-          marker.style.top = `${20 + Math.random() * 60}%`;
-          marker.textContent = (index + 1).toString();
-          marker.onclick = () => setSelectedJob(job.id);
+        // Create and add the marker
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat([lng, lat])
+          .addTo(map);
           
-          jobMarkerContainer.appendChild(marker);
+        // Add click event
+        el.addEventListener('click', () => {
+          setSelectedJob(job.id);
         });
         
-        // Replace existing content with our mock map
-        mapRef.current.innerHTML = "";
-        mapRef.current.appendChild(mockMapContainer);
-        setIsMapLoaded(true);
-      }
-    };
-    
-    mockLoadGoogleMaps();
-  }, [filteredJobs]);
+        newMarkers.push(marker);
+      });
+      
+      setMarkers(newMarkers);
+    }
+  }, [map, isMapLoaded, filteredJobs]);
 
   const selectedJobData = filteredJobs.find(job => job.id === selectedJob);
 
