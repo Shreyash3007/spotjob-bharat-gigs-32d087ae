@@ -3,8 +3,9 @@ import { useState } from "react";
 import Layout from "@/components/Layout";
 import JobCard from "@/components/JobCard";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useApp } from "@/context/AppContext";
-import { ArrowLeft, ArrowRight, Filter } from "lucide-react";
+import { ArrowLeft, ArrowRight, Filter, Star, MapPin } from "lucide-react";
 import { 
   Sheet,
   SheetContent,
@@ -16,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobCategory, JobFilter } from "@/types";
+import { Card, CardContent } from "@/components/ui/card";
 
 const JobSwipe = () => {
   const { filteredJobs, jobFilters, setJobFilters } = useApp();
@@ -24,6 +26,7 @@ const JobSwipe = () => {
     ...jobFilters,
     distance: jobFilters.distance || 10,
   });
+  const [animationClass, setAnimationClass] = useState("");
 
   // Category options with display names
   const categoryOptions: {label: string; value: JobCategory}[] = [
@@ -37,17 +40,13 @@ const JobSwipe = () => {
   ];
 
   const handleSwipe = (direction: "left" | "right") => {
-    // If right swipe, apply to job
-    if (direction === "right" && currentCardJob) {
-      // Application logic handled inside JobCard
-    }
+    setAnimationClass(direction === "right" ? "animate-swipe-right" : "animate-swipe-left");
+    
+    // Reset animation and move to next card after animation completes
     setTimeout(() => {
+      setAnimationClass("");
       setCurrentIndex(idx => idx + 1);
-    }, 300);
-  };
-
-  const handleButtonSwipe = (direction: "left" | "right") => {
-    handleSwipe(direction);
+    }, 500);
   };
 
   const handleFilterChange = (key: keyof JobFilter, value: any) => {
@@ -73,15 +72,25 @@ const JobSwipe = () => {
   const currentCardJob = filteredJobs[currentIndex];
   const hasMoreJobs = currentIndex < filteredJobs.length;
 
+  const categoryIcons: Record<JobCategory, string> = {
+    delivery: "🚚",
+    tutoring: "📚",
+    tech: "💻",
+    babysitting: "👶",
+    housekeeping: "🧹",
+    event: "🎭",
+    other: "🛠️"
+  };
+
   return (
     <Layout>
-      <div className="flex flex-col items-center">
-        <div className="w-full max-w-md flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Find Jobs</h2>
+      <div className="flex flex-col items-center max-w-4xl mx-auto">
+        <div className="w-full flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold">Find Jobs</h2>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Filter className="h-4 w-4 mr-1" />
+              <Button variant="outline" size="sm" className="h-9">
+                <Filter className="h-4 w-4 mr-2" />
                 Filters
               </Button>
             </SheetTrigger>
@@ -186,17 +195,82 @@ const JobSwipe = () => {
           </Sheet>
         </div>
 
-        <div className="w-full max-w-md h-[500px] flex flex-col items-center">
+        <div className="w-full max-w-lg h-[520px] flex flex-col items-center">
           {hasMoreJobs ? (
             <div className="relative w-full h-full">
-              <div className="absolute inset-0">
-                <JobCard job={currentCardJob} onSwipe={handleSwipe} swipeable />
+              <div className={`absolute inset-0 ${animationClass}`}>
+                {currentCardJob && (
+                  <div className="bg-white rounded-xl border shadow-lg overflow-hidden h-full flex flex-col">
+                    {/* Card Header */}
+                    <div className="p-5 border-b">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-semibold">{currentCardJob.title}</h2>
+                        <span className="text-2xl">{categoryIcons[currentCardJob.category]}</span>
+                      </div>
+                      <div className="flex items-center mt-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
+                        {currentCardJob.location.address}
+                      </div>
+                    </div>
+                    
+                    {/* Card Content */}
+                    <div className="p-5 flex-1 overflow-auto">
+                      <div className="mb-4">
+                        <Label className="text-xs text-muted-foreground">POSTED BY</Label>
+                        <div className="flex items-center mt-1">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium mr-2">
+                            {currentCardJob.posterName.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">{currentCardJob.posterName}</div>
+                            <div className="flex items-center text-xs">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400 mr-0.5" />
+                              <span>{currentCardJob.posterRating.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div className="bg-accent/50 p-3 rounded-lg">
+                          <div className="text-xs text-muted-foreground">Pay</div>
+                          <div className="text-lg font-semibold text-primary">₹{currentCardJob.pay.amount}</div>
+                        </div>
+                        <div className="bg-accent/50 p-3 rounded-lg">
+                          <div className="text-xs text-muted-foreground">Duration</div>
+                          <div className="font-medium">{currentCardJob.duration}</div>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs text-muted-foreground">DESCRIPTION</Label>
+                        <p className="mt-1 text-sm whitespace-pre-line">{currentCardJob.description}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-5 border-t bg-accent/20">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <Badge variant="outline" className="bg-accent">
+                            {currentCardJob.category}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Posted {new Date(currentCardJob.timestamp).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center h-full w-full border rounded-lg p-8 bg-muted/20">
+            <div className="flex flex-col items-center justify-center h-full w-full border rounded-xl p-8 bg-accent/10 animate-fade-in">
+              <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center text-2xl mb-4">
+                ✓
+              </div>
               <h3 className="text-xl font-semibold mb-2">No more jobs</h3>
-              <p className="text-muted-foreground text-center mb-4">
+              <p className="text-muted-foreground text-center mb-6">
                 You've seen all available jobs matching your filters.
               </p>
               <Button onClick={() => setCurrentIndex(0)}>
@@ -206,24 +280,51 @@ const JobSwipe = () => {
           )}
           
           {hasMoreJobs && (
-            <div className="flex justify-center mt-4 gap-4">
+            <div className="flex justify-center mt-6 gap-6">
               <Button 
                 size="lg"
                 variant="outline"
-                onClick={() => handleButtonSwipe("left")}
-                className="rounded-full h-12 w-12 p-0"
+                onClick={() => handleSwipe("left")}
+                className="rounded-full h-14 w-14 p-0 border-2"
               >
                 <ArrowLeft className="h-6 w-6" />
               </Button>
               <Button 
                 size="lg"
-                onClick={() => handleButtonSwipe("right")}
-                className="rounded-full h-12 w-12 p-0"
+                onClick={() => handleSwipe("right")}
+                className="rounded-full h-14 w-14 p-0 bg-primary border-none"
               >
                 <ArrowRight className="h-6 w-6" />
               </Button>
             </div>
           )}
+        </div>
+
+        <div className="w-full mt-8">
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-medium">How it works</h3>
+            <p className="text-muted-foreground text-sm">Swipe through jobs to find your next opportunity</p>
+          </div>
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="p-4">
+              <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-primary mx-auto mb-2">
+                <ArrowLeft className="h-4 w-4" />
+              </div>
+              <p className="text-sm">Swipe left to skip</p>
+            </div>
+            <div className="p-4">
+              <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-primary mx-auto mb-2">
+                <ArrowRight className="h-4 w-4" />
+              </div>
+              <p className="text-sm">Swipe right to apply</p>
+            </div>
+            <div className="p-4">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white mx-auto mb-2">
+                ✓
+              </div>
+              <p className="text-sm">Get hired!</p>
+            </div>
+          </div>
         </div>
       </div>
     </Layout>
