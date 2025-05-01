@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -182,12 +183,12 @@ const Profile = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-2xl">{user?.name || "User"}</CardTitle>
-                    {verificationStatus === 'verified' || user?.verified ? (
+                    {(verificationStatus === 'verified' || user?.verified) && (
                       <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
-                    ) : null}
+                    )}
                   </div>
                   <div className="flex items-center text-muted-foreground mt-1">
                     <Phone className="h-4 w-4 mr-1" />
