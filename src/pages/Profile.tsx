@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
@@ -26,6 +27,9 @@ import { MapPin, Phone, Loader2, CheckCircle, User, Shield, Star, Search, Briefc
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 
+// Define this as a type to ensure it's used consistently throughout the code
+type VerificationStatus = 'idle' | 'sending' | 'sent' | 'verifying' | 'verified';
+
 const Profile = () => {
   const { user, logout, jobs, appliedJobs } = useApp();
   const [phone, setPhone] = useState("");
@@ -33,7 +37,7 @@ const Profile = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [showVerifyInput, setShowVerifyInput] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'sending' | 'sent' | 'verifying' | 'verified'>('idle');
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('idle');
   const navigate = useNavigate();
 
   useEffect(() => {
