@@ -12,11 +12,13 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+  resolvedTheme: "dark" | "light";
 };
 
 const initialState: ThemeProviderState = {
   theme: "system",
   setTheme: () => null,
+  resolvedTheme: "light"
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -30,21 +32,56 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
+  const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
     const root = window.document.documentElement;
     
+    // Remove both modes first to avoid transitions conflicts
     root.classList.remove("light", "dark");
     
+    let resolvedMode: "light" | "dark" = "light";
+    
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      resolvedMode = window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
         : "light";
-      root.classList.add(systemTheme);
-      return;
+    } else {
+      resolvedMode = theme as "light" | "dark";
     }
     
-    root.classList.add(theme);
+    root.classList.add(resolvedMode);
+    setResolvedTheme(resolvedMode);
+
+    // Set additional custom CSS properties for different themes
+    if (resolvedMode === "dark") {
+      document.body.style.setProperty('--sidebar-primary', 'hsl(260, 84%, 60%)');
+      document.body.style.setProperty('--sidebar-background', 'hsl(222, 47%, 11%)');
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.style.setProperty('--sidebar-primary', 'hsl(260, 84%, 60%)');
+      document.body.style.setProperty('--sidebar-background', 'hsl(0, 0%, 100%)');
+      document.body.setAttribute('data-theme', 'light');
+    }
+  }, [theme]);
+
+  // Listen for system theme changes
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    
+    const handleChange = () => {
+      if (theme === "system") {
+        const root = window.document.documentElement;
+        const systemTheme = mediaQuery.matches ? "dark" : "light";
+        
+        root.classList.remove("light", "dark");
+        root.classList.add(systemTheme);
+        setResolvedTheme(systemTheme);
+      }
+    };
+    
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
   const value = {
@@ -53,6 +90,7 @@ export function ThemeProvider({
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
     },
+    resolvedTheme
   };
 
   return (
