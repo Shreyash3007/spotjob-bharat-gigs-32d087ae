@@ -33,7 +33,7 @@ const Profile = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [showVerifyInput, setShowVerifyInput] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
-  // Define the verification status type including 'verified'
+  // Updated type definition to include 'verified'
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'sending' | 'sent' | 'verifying' | 'verified'>('idle');
   const navigate = useNavigate();
 
