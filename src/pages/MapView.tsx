@@ -1,405 +1,382 @@
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from 'react';
 import Layout from "@/components/Layout";
-import { useApp } from "@/context/AppContext";
-import JobCard from "@/components/JobCard";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Filter, List, Loader2, MapPin, LayoutGrid } from "lucide-react";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
-import { Link } from "react-router-dom";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { JobCategory, JobFilter } from "@/types";
+import { Button } from "@/components/ui/button";
+import { 
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui";
 import { toast } from "sonner";
+import { useApp } from "@/context/AppContext";
+import { MapPin, Search, Filter, X, AlertTriangle, Loader2 } from "lucide-react";
+import { Job } from '@/types';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
-// Add mapbox access token
-mapboxgl.accessToken = "pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw";
+// Default Mapbox token - This should ideally come from environment variables or Supabase secrets
+// For demo purposes only
+const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZS1haSIsImEiOiJjbG95eWQ5YnQwYmprMmtxcm84dGdoeHNkIn0.HWOKtgy07R0JTMHSJGJ60g';
 
 const MapView = () => {
-  const { filteredJobs, user, jobFilters, setJobFilters } = useApp();
-  const mapRef = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<mapboxgl.Map | null>(null);
-  const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
-  const [selectedJob, setSelectedJob] = useState<string | null>(null);
-  const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [viewMode, setViewMode] = useState<"map" | "list">("map");
-  const [filters, setFilters] = useState<JobFilter>({
-    ...jobFilters,
-    distance: jobFilters.distance || 10,
-  });
-  const [mapLoadError, setMapLoadError] = useState(false);
+  const { jobs, filteredJobs, setJobFilters } = useApp();
+  const [search, setSearch] = useState('');
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [mapToken, setMapToken] = useState<string>(MAPBOX_TOKEN);
+  const [customToken, setCustomToken] = useState('');
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  
+  const navigate = useNavigate();
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const markers = useRef<{ [key: string]: mapboxgl.Marker }>({});
+  const popup = useRef<mapboxgl.Popup | null>(null);
 
-  // Category options with display names
-  const categoryOptions: {label: string; value: JobCategory}[] = [
-    { label: "Delivery", value: "delivery" },
-    { label: "Tutoring", value: "tutoring" },
-    { label: "Tech Work", value: "tech" },
-    { label: "Babysitting", value: "babysitting" },
-    { label: "Housekeeping", value: "housekeeping" },
-    { label: "Events", value: "event" },
-    { label: "Other", value: "other" }
-  ];
-
-  // Initialize Mapbox
   useEffect(() => {
-    if (!mapRef.current || map) return;
-    
+    if (!mapContainer.current || map.current) return;
+
     try {
-      // Create map instance
-      const newMap = new mapboxgl.Map({
-        container: mapRef.current,
-        style: "mapbox://styles/mapbox/streets-v11",
-        center: [78.9629, 20.5937], // Center of India
-        zoom: 4,
+      mapboxgl.accessToken = mapToken;
+      
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [73.8567, 18.5204], // Default to Pune, India
+        zoom: 12,
       });
 
-      // Add navigation controls
-      newMap.addControl(new mapboxgl.NavigationControl(), "top-right");
+      // Add navigation control
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
       
-      // Set map loaded state when map is ready
-      newMap.on("load", () => {
-        console.log("Map successfully loaded");
-        setIsMapLoaded(true);
-        setMap(newMap);
-        toast.success("Map loaded successfully!");
+      map.current.on('load', () => {
+        setMapLoaded(true);
+        setLoading(false);
       });
-      
-      // Error handling
-      newMap.on("error", (e) => {
+
+      map.current.on('error', (e) => {
         console.error("Map error:", e);
-        setMapLoadError(true);
-        toast.error("Failed to load map. Please try again later.");
+        setError("Failed to load map. Please check your connection or API token.");
+        setLoading(false);
       });
-    } catch (error) {
-      console.error("Error initializing map:", error);
-      setMapLoadError(true);
-      toast.error("Failed to initialize map. Please try again later.");
-    }
 
-    return () => {
-      // Clean up map when component unmounts
-      if (map) {
-        console.log("Removing map");
-        map.remove();
-      }
-    };
-  }, [mapRef, map]);
+      // Create popup but don't add to map yet
+      popup.current = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: true,
+        className: 'custom-popup'
+      });
 
-  // Add job markers when map and jobs are loaded
-  useEffect(() => {
-    if (map && isMapLoaded && filteredJobs.length > 0) {
-      console.log("Adding markers to map");
-      // Remove any existing markers
-      markers.forEach(marker => marker.remove());
-      const newMarkers: mapboxgl.Marker[] = [];
-
-      // Create markers for each job
-      filteredJobs.forEach((job, index) => {
-        // Create a custom marker element
-        const el = document.createElement('div');
-        el.className = 'w-6 h-6 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:scale-110 transition-all';
-        el.textContent = (index + 1).toString();
-        el.style.width = '24px';
-        el.style.height = '24px';
-        el.style.display = 'flex';
-        el.style.alignItems = 'center';
-        el.style.justifyContent = 'center';
-        el.style.backgroundColor = '#7c3aed';
-        el.style.color = 'white';
-        el.style.borderRadius = '50%';
-        el.style.fontWeight = 'bold';
-        el.style.cursor = 'pointer';
-        
-        // Use the job's actual location data
-        const lng = job.location.lng;
-        const lat = job.location.lat;
-        
-        try {
-          // Create and add the marker
-          const marker = new mapboxgl.Marker(el)
-            .setLngLat([lng, lat])
-            .addTo(map);
-            
-          // Add click event
-          el.addEventListener('click', () => {
-            setSelectedJob(job.id);
-          });
-          
-          newMarkers.push(marker);
-        } catch (error) {
-          console.error(`Error adding marker for job ${job.id}:`, error);
+      return () => {
+        if (map.current) {
+          map.current.remove();
+          map.current = null;
         }
-      });
-      
-      setMarkers(newMarkers);
+      };
+    } catch (err) {
+      console.error("Error initializing map:", err);
+      setError("Failed to initialize map. Please check your API token.");
+      setLoading(false);
     }
-  }, [map, isMapLoaded, filteredJobs]);
+  }, [mapToken]);
 
-  const selectedJobData = filteredJobs.find(job => job.id === selectedJob);
-
-  const handleFilterChange = (key: keyof JobFilter, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-
-  const handleCategoryChange = (category: JobCategory, checked: boolean) => {
-    const current = filters.category || [];
-    const updated = checked 
-      ? [...current, category]
-      : current.filter(c => c !== category);
+  // Add markers when filteredJobs or map updates
+  useEffect(() => {
+    if (!mapLoaded || !map.current) return;
     
-    handleFilterChange('category', updated);
+    // Clear existing markers
+    Object.values(markers.current).forEach(marker => marker.remove());
+    markers.current = {};
+    
+    // Add markers for each job
+    filteredJobs.forEach(job => {
+      if (job.location && job.location.lat && job.location.lng) {
+        // Create HTML element for marker
+        const el = document.createElement('div');
+        el.className = 'marker';
+        el.style.width = '25px';
+        el.style.height = '25px';
+        el.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="%237c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>')`;
+        el.style.backgroundSize = '100%';
+        
+        // Create popup content
+        const popupContent = `
+          <div class="p-2 min-w-[220px]">
+            <h3 class="font-medium">${job.title}</h3>
+            <p class="text-sm text-gray-600">₹${job.pay.amount} · ${job.duration}</p>
+          </div>
+        `;
+        
+        // Create marker and add to map
+        const marker = new mapboxgl.Marker(el)
+          .setLngLat([job.location.lng, job.location.lat])
+          .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
+          .addTo(map.current);
+        
+        // Add click event to marker
+        el.addEventListener('click', () => {
+          setSelectedJob(job);
+        });
+        
+        // Store marker reference
+        markers.current[job.id] = marker;
+      }
+    });
+    
+    // If there are jobs with valid locations, fit map to show all markers
+    if (Object.keys(markers.current).length > 0) {
+      const bounds = new mapboxgl.LngLatBounds();
+      Object.values(markers.current).forEach(marker => {
+        bounds.extend(marker.getLngLat());
+      });
+      map.current.fitBounds(bounds, { padding: 50 });
+    }
+  }, [filteredJobs, mapLoaded]);
+
+  const handleSearch = () => {
+    setJobFilters({ search });
   };
 
-  const applyFilters = () => {
-    setJobFilters(filters);
+  const tryAgainWithToken = () => {
+    if (customToken.trim()) {
+      setMapToken(customToken.trim());
+      setLoading(true);
+      setError(null);
+      
+      // Remove the existing map instance
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    } else {
+      toast.error("Please enter a valid Mapbox token");
+    }
   };
 
-  const retryMapLoad = () => {
-    if (map) map.remove();
-    setMap(null);
-    setIsMapLoaded(false);
-    setMapLoadError(false);
-    toast.info("Retrying map load...");
+  const resetToken = () => {
+    setMapToken(MAPBOX_TOKEN);
+    setCustomToken('');
+    setLoading(true);
+    setError(null);
+    
+    // Remove the existing map instance
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
+  };
+
+  const handleJobCardClick = (job: Job) => {
+    navigate(`/job/${job.id}`);
   };
 
   return (
-    <Layout fullHeight>
-      <div className="h-full flex flex-col">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Jobs Near You</h2>
-          <div className="flex items-center gap-2">
-            <div className="bg-accent rounded-md flex p-1">
-              <Button 
-                variant={viewMode === "map" ? "default" : "ghost"} 
-                size="sm" 
-                className="h-8 px-2"
-                onClick={() => setViewMode("map")}
-              >
-                <MapPin className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Map</span>
-              </Button>
-              <Button 
-                variant={viewMode === "list" ? "default" : "ghost"} 
-                size="sm" 
-                className="h-8 px-2"
-                onClick={() => setViewMode("list")}
-              >
-                <List className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">List</span>
-              </Button>
-            </div>
-            
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8">
-                  <Filter className="h-4 w-4 mr-1" />
-                  <span className="hidden sm:inline">Filters</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <SheetHeader>
-                  <SheetTitle>Filter Jobs</SheetTitle>
-                </SheetHeader>
-                <div className="py-4 space-y-6">
-                  <div className="space-y-2">
-                    <Label>Distance (km)</Label>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">{filters.distance} km</span>
-                    </div>
-                    <Slider 
-                      defaultValue={[filters.distance || 10]} 
-                      max={50}
-                      step={1}
-                      className="py-2"
-                      onValueChange={(values) => handleFilterChange('distance', values[0])}
+    <Layout>
+      <div className="h-[calc(100vh-5rem)]">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
+          {/* Sidebar with jobs list */}
+          <div className="md:col-span-1 h-full overflow-y-auto">
+            <Card className="h-full border-0 md:border shadow-none md:shadow-md rounded-none md:rounded-lg">
+              <CardHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm border-b pb-4">
+                <CardTitle className="text-xl flex justify-between items-center">
+                  <span>Jobs Near You</span>
+                  <Badge variant="outline" className="font-normal">
+                    {filteredJobs.length} found
+                  </Badge>
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search jobs..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Categories</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {categoryOptions.map((category) => (
-                        <div key={category.value} className="flex items-center space-x-2">
-                          <Checkbox 
-                            id={`category-${category.value}`} 
-                            checked={(filters.category || []).includes(category.value)}
-                            onCheckedChange={(checked) => 
-                              handleCategoryChange(category.value, checked as boolean)
-                            }
-                          />
-                          <label 
-                            htmlFor={`category-${category.value}`}
-                            className="text-sm font-medium leading-none cursor-pointer"
-                          >
-                            {category.label}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Pay Range (₹)</Label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        placeholder="Min"
-                        className="w-full px-3 py-2 border rounded-md text-sm"
-                        value={filters.payMin || ""}
-                        onChange={(e) => handleFilterChange('payMin', e.target.value ? parseInt(e.target.value) : undefined)}
-                      />
-                      <span>-</span>
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        className="w-full px-3 py-2 border rounded-md text-sm"
-                        value={filters.payMax || ""}
-                        onChange={(e) => handleFilterChange('payMax', e.target.value ? parseInt(e.target.value) : undefined)}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Sort By</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button 
-                        variant={filters.sortBy === 'newest' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('sortBy', 'newest')}
-                      >
-                        Newest
-                      </Button>
-                      <Button 
-                        variant={filters.sortBy === 'pay' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('sortBy', 'pay')}
-                      >
-                        Highest Pay
-                      </Button>
-                      <Button 
-                        variant={filters.sortBy === 'distance' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleFilterChange('sortBy', 'distance')}
-                      >
-                        Nearest
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    onClick={applyFilters}
-                    className="w-full"
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={showFilters ? 'bg-accent' : ''}
                   >
-                    Apply Filters
+                    <Filter className="h-4 w-4" />
                   </Button>
                 </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-        
-        <div className="flex-1 grid md:grid-cols-3 gap-4 h-[calc(100%-48px)]">
-          {viewMode === "map" ? (
-            <>
-              <div className="md:col-span-2 h-full rounded-xl overflow-hidden border bg-card">
-                {mapLoadError ? (
-                  <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20">
-                    <div className="text-destructive mb-4">Error loading map</div>
-                    <Button onClick={retryMapLoad}>Retry</Button>
-                  </div>
-                ) : !isMapLoaded ? (
-                  <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
-                    <span className="text-muted-foreground">Loading map...</span>
-                  </div>
-                ) : (
-                  <div ref={mapRef} className="h-full w-full rounded-xl" />
+                {showFilters && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="grid grid-cols-2 gap-2 mt-2"
+                  >
+                    <div>
+                      <label className="text-xs text-muted-foreground">Category</label>
+                      <Select defaultValue="all">
+                        <SelectTrigger className="w-full h-9">
+                          <SelectValue placeholder="All Categories" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Categories</SelectItem>
+                          <SelectItem value="delivery">Delivery</SelectItem>
+                          <SelectItem value="tutoring">Tutoring</SelectItem>
+                          <SelectItem value="tech">Tech</SelectItem>
+                          <SelectItem value="event">Events</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Sort By</label>
+                      <Select defaultValue="distance">
+                        <SelectTrigger className="w-full h-9">
+                          <SelectValue placeholder="Distance" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="distance">Nearest</SelectItem>
+                          <SelectItem value="pay">Highest Pay</SelectItem>
+                          <SelectItem value="newest">Newest</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </motion.div>
                 )}
-              </div>
-              
-              <div className="flex flex-col overflow-hidden">
-                {selectedJobData ? (
-                  <div className="flex flex-col h-full animate-fade-in">
-                    <JobCard job={selectedJobData} />
-                    <Button 
-                      variant="ghost" 
-                      className="mt-2"
-                      onClick={() => setSelectedJob(null)}
-                    >
-                      Back to list
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex-1 overflow-auto space-y-3 pr-1 animate-slide-up">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Click on a marker to view job details
-                    </p>
-                    {filteredJobs.map((job, index) => (
+              </CardHeader>
+              <CardContent className="p-0">
+                {filteredJobs.length > 0 ? (
+                  <div className="divide-y">
+                    {filteredJobs.map((job) => (
                       <div 
-                        key={job.id} 
-                        className="p-4 border rounded-lg cursor-pointer hover:border-primary/30 hover:bg-accent/30 transition-all"
-                        onClick={() => setSelectedJob(job.id)}
+                        key={job.id}
+                        className={`p-4 cursor-pointer hover:bg-accent/50 transition-colors ${
+                          selectedJob?.id === job.id ? 'bg-accent' : ''
+                        }`}
+                        onClick={() => setSelectedJob(job)}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-medium">{job.title}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-1 flex items-center">
-                              <MapPin className="h-3 w-3 mr-1 inline" />
-                              {job.location.address}
-                            </p>
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="text-sm font-semibold text-primary">₹{job.pay.amount}</span>
-                              <Badge variant="outline" className="bg-accent/50 hover:bg-accent/80">
-                                {job.duration}
-                              </Badge>
-                            </div>
-                          </div>
+                        <h3 className="font-medium text-lg">{job.title}</h3>
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{job.location.address}</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2">
+                          <span className="text-primary font-medium">₹{job.pay.amount}</span>
+                          <Badge variant="outline">{job.category}</Badge>
                         </div>
                       </div>
                     ))}
                   </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                      <Search className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-1">No jobs found</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Try adjusting your search or filters
+                    </p>
+                  </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* Map */}
+          <div className="md:col-span-2 h-full relative">
+            <div ref={mapContainer} className="h-full w-full rounded-lg border overflow-hidden"></div>
+            
+            {/* Loading overlay */}
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+                  <p className="font-medium">Loading map...</p>
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="col-span-3 grid sm:grid-cols-2 md:grid-cols-3 gap-4 animate-fade-in">
-              {filteredJobs.map((job) => (
-                <Link to={`/job/${job.id}`} key={job.id} className="block">
-                  <Card className="h-full hover:border-primary/30 transition-all hover:shadow-md">
+            )}
+            
+            {/* Error overlay */}
+            {error && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm p-6">
+                <Card className="max-w-md w-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                      Map Loading Error
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p>{error}</p>
+                    <div className="space-y-2">
+                      <label htmlFor="mapbox-token" className="text-sm font-medium">
+                        Enter your Mapbox token:
+                      </label>
+                      <Input
+                        id="mapbox-token"
+                        value={customToken}
+                        onChange={(e) => setCustomToken(e.target.value)}
+                        placeholder="pk.eyJ1Ijoi..."
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button onClick={tryAgainWithToken}>Try with this token</Button>
+                      <Button variant="outline" onClick={resetToken}>
+                        Reset to default
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            {/* Selected job card */}
+            {selectedJob && mapLoaded && !loading && !error && (
+              <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="relative"
+                >
+                  <Card className="shadow-lg border bg-card/95 backdrop-blur-sm">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSelectedJob(null)}
+                      className="absolute top-2 right-2 h-7 w-7"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                     <CardContent className="p-4">
-                      <div className="flex flex-col h-full">
-                        <div>
-                          <h3 className="font-medium line-clamp-1">{job.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-1 flex items-center mt-1">
-                            <MapPin className="h-3 w-3 mr-1 inline flex-shrink-0" />
-                            {job.location.address}
-                          </p>
-                        </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2 my-3">{job.description}</p>
-                        <div className="flex items-center justify-between mt-auto pt-2">
-                          <span className="font-medium text-primary">₹{job.pay.amount}</span>
-                          <Badge variant="outline" className="bg-accent/50 hover:bg-accent/80">
-                            {job.duration}
-                          </Badge>
-                        </div>
+                      <h3 className="font-medium text-lg mb-1">{selectedJob.title}</h3>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span>{selectedJob.location.address}</span>
                       </div>
+                      <div className="flex justify-between items-center mt-2 mb-3">
+                        <span className="text-primary font-medium">₹{selectedJob.pay.amount}</span>
+                        <Badge variant="outline">{selectedJob.duration}</Badge>
+                      </div>
+                      <p className="text-sm line-clamp-2 mb-3">{selectedJob.description}</p>
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleJobCardClick(selectedJob)}
+                      >
+                        View Details
+                      </Button>
                     </CardContent>
                   </Card>
-                </Link>
-              ))}
-            </div>
-          )}
+                </motion.div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

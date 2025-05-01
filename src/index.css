@@ -5,6 +5,7 @@
 
 @layer base {
   :root {
+    /* Light Mode Colors - Professional and Sleek */
     --background: 210 40% 98%;
     --foreground: 222 47% 11%;
 
@@ -14,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 260 84% 60%;
+    --primary: 225 64% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -23,7 +24,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 260 84% 96%;
+    --accent: 225 64% 96%;
     --accent-foreground: 222 47% 11%;
 
     --destructive: 0 84.2% 60.2%;
@@ -31,12 +32,13 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 260 84% 60%;
+    --ring: 225 64% 50%;
 
     --radius: 0.75rem;
   }
 
   .dark {
+    /* Dark Mode Colors - Deep Charcoal/Navy */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
@@ -46,7 +48,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 260 84% 60%;
+    --primary: 225 64% 60%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -63,7 +65,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 260 84% 60%;
+    --ring: 225 64% 60%;
   }
 }
 
@@ -72,10 +74,19 @@
     @apply border-border;
   }
 
+  html {
+    @apply scroll-smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     scroll-behavior: smooth;
+  }
+
+  /* Apply smooth transition to all elements when switching themes */
+  *, *::before, *::after {
+    transition: background-color 0.2s ease, border-color 0.2s ease, outline-color 0.2s ease;
   }
 
   .map-container {
@@ -91,7 +102,7 @@
   }
 
   .feature-card {
-    @apply relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md;
+    @apply relative overflow-hidden rounded-xl border bg-card/80 backdrop-blur-sm p-6 shadow-sm transition-all hover:shadow-md;
   }
 
   .section-title {
@@ -112,7 +123,7 @@
 
   /* Professional card styling */
   .pro-card {
-    @apply bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all overflow-hidden;
+    @apply bg-card/80 rounded-lg border border-border shadow-sm hover:shadow-md transition-all overflow-hidden backdrop-blur-sm;
   }
   
   .pro-card-header {
@@ -134,6 +145,27 @@
   
   .glass-card {
     @apply glass rounded-xl shadow-xl;
+  }
+
+  /* Professional navigation */
+  .nav-link {
+    @apply relative px-3 py-2 text-muted-foreground hover:text-foreground transition-colors;
+  }
+
+  .nav-link::after {
+    @apply content-[''] absolute left-0 bottom-0 w-full h-0.5 bg-primary scale-x-0 origin-bottom-right transition-transform duration-300;
+  }
+
+  .nav-link:hover::after {
+    @apply scale-x-100 origin-bottom-left;
+  }
+
+  .nav-link.active {
+    @apply text-foreground font-medium;
+  }
+
+  .nav-link.active::after {
+    @apply scale-x-100;
   }
 }
 
@@ -265,6 +297,7 @@
   }
 }
 
+/* Professional animations */
 .job-card {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   transform-origin: center;
@@ -278,4 +311,55 @@
 .react-draggable-dragging {
   cursor: grabbing;
   z-index: 100;
+}
+
+/* Add professional shadow depth layers */
+.shadow-depth-1 {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+.shadow-depth-2 {
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+
+.shadow-depth-3 {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+
+.shadow-depth-4 {
+  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+.shadow-depth-5 {
+  box-shadow: 0 19px 38px rgba(0,0,0,0.30), 0 15px 12px rgba(0,0,0,0.22);
+}
+
+/* Gradient backgrounds */
+.bg-gradient-cool {
+  background-image: linear-gradient(to right, #0ea5e9, #8b5cf6);
+}
+
+.bg-gradient-warm {
+  background-image: linear-gradient(to right, #f97316, #ec4899);
+}
+
+/* Add professional blur backdrop effect */
+.backdrop-blur-card {
+  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive container adjustments */
+.container-tight {
+  max-width: 65ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Glass card with frosted effect for dark mode */
+.glass-card-dark {
+  background: rgba(17, 25, 40, 0.75);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+  border-radius: 0.75rem;
 }

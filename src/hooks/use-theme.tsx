@@ -26,7 +26,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "vite-ui-theme",
+  storageKey = "spotjob-theme",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
@@ -52,6 +52,10 @@ export function ThemeProvider({
     
     root.classList.add(resolvedMode);
     setResolvedTheme(resolvedMode);
+    
+    // Apply smooth transition to all elements when changing themes
+    root.style.setProperty('--theme-transition', 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease');
+    document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
 
     // Set additional custom CSS properties for different themes
     if (resolvedMode === "dark") {
