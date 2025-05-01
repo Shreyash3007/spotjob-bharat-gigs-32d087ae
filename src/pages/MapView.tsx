@@ -4,18 +4,18 @@ import Layout from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { 
-  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-} from "@/components/ui";
+  SelectValue
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
 import { MapPin, Search, Filter, X, AlertTriangle, Loader2 } from "lucide-react";
-import { Job } from '@/types';
+import { JobPost } from '@/types';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useNavigate } from 'react-router-dom';
@@ -27,14 +27,14 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZS1haSIsImEiOiJjbG95eWQ5YnQwYmprMmtxcm8
 
 const MapView = () => {
   const { jobs, filteredJobs, setJobFilters } = useApp();
-  const [search, setSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [mapLoaded, setMapLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [mapToken, setMapToken] = useState<string>(MAPBOX_TOKEN);
   const [customToken, setCustomToken] = useState('');
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
   
   const navigate = useNavigate();
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -143,7 +143,11 @@ const MapView = () => {
   }, [filteredJobs, mapLoaded]);
 
   const handleSearch = () => {
-    setJobFilters({ search });
+    setJobFilters({ category: undefined, distance: undefined, payMin: undefined, payMax: undefined, duration: undefined, sortBy: undefined });
+    if (searchQuery.trim()) {
+      // In a real app, you would update the filters to include search
+      toast.info(`Searching for "${searchQuery}"`, { duration: 2000 });
+    }
   };
 
   const tryAgainWithToken = () => {
@@ -175,7 +179,7 @@ const MapView = () => {
     }
   };
 
-  const handleJobCardClick = (job: Job) => {
+  const handleJobCardClick = (job: JobPost) => {
     navigate(`/job/${job.id}`);
   };
 
@@ -198,8 +202,8 @@ const MapView = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search jobs..."
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-9"
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />

@@ -13,7 +13,7 @@ export function ThemeToggle() {
       size="icon"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       aria-label="Toggle theme"
-      className="relative overflow-hidden border-muted/30 bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground"
+      className="relative overflow-hidden border-muted/30 bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground transition-all duration-300"
     >
       <span className="sr-only">Toggle theme</span>
       
@@ -23,7 +23,7 @@ export function ThemeToggle() {
             initial={{ scale: 0, rotate: -90 }}
             animate={{ scale: 1, rotate: 0 }}
             exit={{ scale: 0, rotate: 90 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
           >
             <Sun className="h-full w-full" />
           </motion.div>
@@ -32,7 +32,7 @@ export function ThemeToggle() {
             initial={{ scale: 0, rotate: 90 }}
             animate={{ scale: 1, rotate: 0 }}
             exit={{ scale: 0, rotate: -90 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
           >
             <Moon className="h-full w-full" />
           </motion.div>

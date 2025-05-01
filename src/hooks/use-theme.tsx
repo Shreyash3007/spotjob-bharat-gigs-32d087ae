@@ -54,18 +54,32 @@ export function ThemeProvider({
     setResolvedTheme(resolvedMode);
     
     // Apply smooth transition to all elements when changing themes
-    root.style.setProperty('--theme-transition', 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease');
-    document.body.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+    root.style.setProperty('--theme-transition', 'background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, fill 0.5s ease, stroke 0.5s ease');
+    document.body.style.transition = 'background-color 0.5s ease, color 0.5s ease';
 
     // Set additional custom CSS properties for different themes
     if (resolvedMode === "dark") {
       document.body.style.setProperty('--sidebar-primary', 'hsl(260, 84%, 60%)');
       document.body.style.setProperty('--sidebar-background', 'hsl(222, 47%, 11%)');
       document.body.setAttribute('data-theme', 'dark');
+      
+      // Add glass effect to specific elements
+      document.querySelectorAll('.glass-effect').forEach((el) => {
+        (el as HTMLElement).style.backdropFilter = 'blur(10px)';
+        (el as HTMLElement).style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
+        (el as HTMLElement).style.borderColor = 'rgba(255, 255, 255, 0.1)';
+      });
     } else {
       document.body.style.setProperty('--sidebar-primary', 'hsl(260, 84%, 60%)');
       document.body.style.setProperty('--sidebar-background', 'hsl(0, 0%, 100%)');
       document.body.setAttribute('data-theme', 'light');
+      
+      // Add glass effect to specific elements
+      document.querySelectorAll('.glass-effect').forEach((el) => {
+        (el as HTMLElement).style.backdropFilter = 'blur(10px)';
+        (el as HTMLElement).style.backgroundColor = 'rgba(255, 255, 255, 0.75)';
+        (el as HTMLElement).style.borderColor = 'rgba(0, 0, 0, 0.1)';
+      });
     }
   }, [theme]);
 

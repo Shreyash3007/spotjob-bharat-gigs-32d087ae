@@ -23,7 +23,7 @@ import { useApp } from "@/context/AppContext";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MapPin, Phone, Loader2, CheckCircle, User, Shield, Star } from "lucide-react";
+import { MapPin, Phone, Loader2, CheckCircle, User, Shield, Star, Search, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 
@@ -159,6 +159,9 @@ const Profile = () => {
     );
   }
 
+  // Calculate profile completion percentage (mock functionality)
+  const profileCompletion = user.verified ? 90 : 70;
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto">
@@ -202,7 +205,7 @@ const Profile = () => {
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/30">
                   <User className="h-3 w-3 mr-1" />
-                  Profile {(user.profileCompleted || 70)}% Complete
+                  Profile {profileCompletion}% Complete
                 </Badge>
                 
                 <Badge variant="outline" className="bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/30">
@@ -212,7 +215,7 @@ const Profile = () => {
                 
                 <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/30">
                   <Shield className="h-3 w-3 mr-1" />
-                  {user.kycVerified ? "KYC Verified" : "KYC Pending"}
+                  {user.verified ? "KYC Verified" : "KYC Pending"}
                 </Badge>
               </div>
 
