@@ -34,6 +34,7 @@ const Profile = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [showVerifyInput, setShowVerifyInput] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
+  // Fix: Updated the type to include 'verified'
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'sending' | 'sent' | 'verifying' | 'verified'>('idle');
   const navigate = useNavigate();
 
@@ -174,15 +175,15 @@ const Profile = () => {
             <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent pb-4">
               <div className="flex flex-row items-center gap-4">
                 <Avatar className="h-20 w-20 border-2 border-primary/30 shadow-lg">
-                  <AvatarImage src={user.avatar} />
+                  <AvatarImage src={user?.avatar} />
                   <AvatarFallback className="bg-primary/20 text-primary text-xl">
-                    {user.name.charAt(0)}
+                    {user?.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-2xl">{user.name}</CardTitle>
-                    {verificationStatus === 'verified' || user.verified ? (
+                    <CardTitle className="text-2xl">{user?.name || "User"}</CardTitle>
+                    {verificationStatus === 'verified' || user?.verified ? (
                       <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30">
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Verified
@@ -191,7 +192,7 @@ const Profile = () => {
                   </div>
                   <div className="flex items-center text-muted-foreground mt-1">
                     <Phone className="h-4 w-4 mr-1" />
-                    <span>{user.phone || "Phone not verified"}</span>
+                    <span>{user?.phone || "Phone not verified"}</span>
                   </div>
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="h-4 w-4 mr-1" />
@@ -205,17 +206,17 @@ const Profile = () => {
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/30">
                   <User className="h-3 w-3 mr-1" />
-                  Profile {profileCompletion}% Complete
+                  Profile {user?.verified ? 90 : 70}% Complete
                 </Badge>
                 
                 <Badge variant="outline" className="bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/30">
                   <Star className="h-3 w-3 mr-1" />
-                  {user.rating} Rating
+                  {user?.rating || 0} Rating
                 </Badge>
                 
                 <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800/30">
                   <Shield className="h-3 w-3 mr-1" />
-                  {user.verified ? "KYC Verified" : "KYC Pending"}
+                  {user?.verified ? "KYC Verified" : "KYC Pending"}
                 </Badge>
               </div>
 
@@ -226,7 +227,7 @@ const Profile = () => {
                     <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-3" />
                     <div>
                       <p className="font-medium text-green-800 dark:text-green-400">Phone number verified</p>
-                      <p className="text-sm text-green-700 dark:text-green-500">{phone || user.phone} has been successfully verified</p>
+                      <p className="text-sm text-green-700 dark:text-green-500">{phone || user?.phone} has been successfully verified</p>
                     </div>
                   </div>
                 ) : (

@@ -1,12 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Search, PlusCircle, User, Home, Menu, X, LogIn, Clock, Sun, Moon } from "lucide-react";
+import { MapPin, Search, PlusCircle, User, Home, Menu, X, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useApp } from "@/context/AppContext";
-import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 
 interface LayoutProps {

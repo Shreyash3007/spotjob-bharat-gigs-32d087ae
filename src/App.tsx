@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,8 +23,7 @@ import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  // Set meta theme color
+const ThemeMetaColor = () => {
   useEffect(() => {
     // Create meta theme-color if it doesn't exist
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -60,33 +60,40 @@ const App = () => {
     return () => observer.disconnect();
   }, []);
 
+  return null;
+}
+
+const App = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="spotjob-theme">
-        <AuthProvider>
-          <AppProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner expand={true} closeButton richColors />
-              <BrowserRouter>
-                <AnimatePresence mode="wait">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/map" element={<MapView />} />
-                    <Route path="/swipe" element={<JobSwipe />} />
-                    <Route path="/post-job" element={<PostJob />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/job/:id" element={<JobDetails />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </AnimatePresence>
-              </BrowserRouter>
-            </TooltipProvider>
-          </AppProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider defaultTheme="system" storageKey="spotjob-theme">
+          <ThemeMetaColor />
+          <AuthProvider>
+            <AppProvider>
+              <TooltipProvider>
+                <BrowserRouter>
+                  <Toaster />
+                  <Sonner expand={true} closeButton richColors />
+                  <AnimatePresence mode="wait">
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/map" element={<MapView />} />
+                      <Route path="/swipe" element={<JobSwipe />} />
+                      <Route path="/post-job" element={<PostJob />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/job/:id" element={<JobDetails />} />
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AnimatePresence>
+                </BrowserRouter>
+              </TooltipProvider>
+            </AppProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
   );
 };
 
