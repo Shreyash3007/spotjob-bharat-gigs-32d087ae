@@ -15,6 +15,10 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobCategory, JobFilter } from "@/types";
+import { toast } from "sonner";
+
+// Add mapbox access token
+mapboxgl.accessToken = "pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw";
 
 const MapView = () => {
   const { filteredJobs, user, jobFilters, setJobFilters } = useApp();
@@ -28,6 +32,7 @@ const MapView = () => {
     ...jobFilters,
     distance: jobFilters.distance || 10,
   });
+  const [mapLoadError, setMapLoadError] = useState(false);
 
   // Category options with display names
   const categoryOptions: {label: string; value: JobCategory}[] = [
@@ -42,12 +47,10 @@ const MapView = () => {
 
   // Initialize Mapbox
   useEffect(() => {
-    // Set Mapbox access token
-    mapboxgl.accessToken = "pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw";
+    if (!mapRef.current || map) return;
     
-    // Create map instance if mapRef is available and no map exists yet
-    if (mapRef.current && !map) {
-      // Initialize map centered on India
+    try {
+      // Create map instance
       const newMap = new mapboxgl.Map({
         container: mapRef.current,
         style: "mapbox://styles/mapbox/streets-v11",
@@ -60,20 +63,37 @@ const MapView = () => {
       
       // Set map loaded state when map is ready
       newMap.on("load", () => {
+        console.log("Map successfully loaded");
         setIsMapLoaded(true);
         setMap(newMap);
+        toast.success("Map loaded successfully!");
       });
+      
+      // Error handling
+      newMap.on("error", (e) => {
+        console.error("Map error:", e);
+        setMapLoadError(true);
+        toast.error("Failed to load map. Please try again later.");
+      });
+    } catch (error) {
+      console.error("Error initializing map:", error);
+      setMapLoadError(true);
+      toast.error("Failed to initialize map. Please try again later.");
     }
 
     return () => {
       // Clean up map when component unmounts
-      if (map) map.remove();
+      if (map) {
+        console.log("Removing map");
+        map.remove();
+      }
     };
-  }, [mapRef]);
+  }, [mapRef, map]);
 
   // Add job markers when map and jobs are loaded
   useEffect(() => {
     if (map && isMapLoaded && filteredJobs.length > 0) {
+      console.log("Adding markers to map");
       // Remove any existing markers
       markers.forEach(marker => marker.remove());
       const newMarkers: mapboxgl.Marker[] = [];
@@ -99,17 +119,21 @@ const MapView = () => {
         const lng = job.location.lng;
         const lat = job.location.lat;
         
-        // Create and add the marker
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([lng, lat])
-          .addTo(map);
+        try {
+          // Create and add the marker
+          const marker = new mapboxgl.Marker(el)
+            .setLngLat([lng, lat])
+            .addTo(map);
+            
+          // Add click event
+          el.addEventListener('click', () => {
+            setSelectedJob(job.id);
+          });
           
-        // Add click event
-        el.addEventListener('click', () => {
-          setSelectedJob(job.id);
-        });
-        
-        newMarkers.push(marker);
+          newMarkers.push(marker);
+        } catch (error) {
+          console.error(`Error adding marker for job ${job.id}:`, error);
+        }
       });
       
       setMarkers(newMarkers);
@@ -136,6 +160,14 @@ const MapView = () => {
 
   const applyFilters = () => {
     setJobFilters(filters);
+  };
+
+  const retryMapLoad = () => {
+    if (map) map.remove();
+    setMap(null);
+    setIsMapLoaded(false);
+    setMapLoadError(false);
+    toast.info("Retrying map load...");
   };
 
   return (
@@ -278,7 +310,12 @@ const MapView = () => {
           {viewMode === "map" ? (
             <>
               <div className="md:col-span-2 h-full rounded-xl overflow-hidden border bg-card">
-                {!isMapLoaded ? (
+                {mapLoadError ? (
+                  <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20">
+                    <div className="text-destructive mb-4">Error loading map</div>
+                    <Button onClick={retryMapLoad}>Retry</Button>
+                  </div>
+                ) : !isMapLoaded ? (
                   <div className="h-full w-full flex flex-col items-center justify-center bg-muted/20">
                     <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
                     <span className="text-muted-foreground">Loading map...</span>
