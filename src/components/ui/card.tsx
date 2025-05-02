@@ -1,19 +1,59 @@
-import * as React from "react"
 
+import * as React from "react"
+import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease: "easeOut"
+    }
+  },
+  hover: { 
+    y: -5,
+    boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+    transition: {
+      duration: 0.2,
+      ease: "easeOut"
+    }
+  }
+}
+
+const AnimatedCard = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & { animated?: boolean }
+>(({ className, animated = false, ...props }, ref) => {
+  const Component = animated ? motion.div : "div";
+  const animationProps = animated ? {
+    variants: cardVariants,
+    initial: "hidden",
+    animate: "visible",
+    whileHover: "hover"
+  } : {};
+  
+  return (
+    <Component
+      ref={ref as any}
+      className={cn(
+        "rounded-lg border bg-card text-card-foreground shadow-sm",
+        className
+      )}
+      {...animationProps}
+      {...props}
+    />
+  )
+})
+AnimatedCard.displayName = "Card"
 
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
-      className
-    )}
-    {...props}
-  />
+  <AnimatedCard ref={ref} className={className} {...props} />
 ))
 Card.displayName = "Card"
 
@@ -76,4 +116,12 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+export { 
+  Card, 
+  CardHeader, 
+  CardFooter, 
+  CardTitle, 
+  CardDescription, 
+  CardContent,
+  AnimatedCard
+}

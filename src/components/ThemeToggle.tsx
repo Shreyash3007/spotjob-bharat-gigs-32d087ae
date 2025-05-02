@@ -2,7 +2,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -13,31 +13,40 @@ export function ThemeToggle() {
       size="icon"
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       aria-label="Toggle theme"
-      className="relative overflow-hidden border-muted/30 bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground transition-all duration-300"
+      className="relative overflow-hidden border-muted/30 bg-background/50 backdrop-blur-sm hover:bg-accent hover:text-accent-foreground transition-all duration-500"
     >
       <span className="sr-only">Toggle theme</span>
       
       <div className="relative h-[1.2rem] w-[1.2rem]">
-        {theme === 'dark' ? (
-          <motion.div
-            initial={{ scale: 0, rotate: -90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            exit={{ scale: 0, rotate: 90 }}
-            transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
-          >
-            <Sun className="h-full w-full" />
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ scale: 0, rotate: 90 }}
-            animate={{ scale: 1, rotate: 0 }}
-            exit={{ scale: 0, rotate: -90 }}
-            transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
-          >
-            <Moon className="h-full w-full" />
-          </motion.div>
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {theme === 'dark' ? (
+            <motion.div
+              key="sun"
+              initial={{ scale: 0, rotate: -90, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              exit={{ scale: 0, rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 15 }}
+              className="absolute inset-0"
+            >
+              <Sun className="h-full w-full" />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="moon"
+              initial={{ scale: 0, rotate: 90, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              exit={{ scale: 0, rotate: -90, opacity: 0 }}
+              transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 15 }}
+              className="absolute inset-0"
+            >
+              <Moon className="h-full w-full" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+      
+      {/* Ripple effect when button is clicked */}
+      <span className="absolute inset-0 w-full h-full bg-primary/10 opacity-0 hover:opacity-100 transition-opacity rounded-md" />
     </Button>
   );
 }

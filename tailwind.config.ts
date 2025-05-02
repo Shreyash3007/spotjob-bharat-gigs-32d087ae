@@ -64,7 +64,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				spotjob: {
-					purple: '#7c3aed',
+					purple: '#8b5cf6', // Updated to a more vibrant purple
 					lightPurple: '#e9e4ff',
 					orange: '#F97316',
 					blue: '#0EA5E9',
@@ -131,6 +131,18 @@ export default {
                     '100%': {
                         transform: 'translate(0px, 0px) scale(1)'
                     }
+                },
+                'shimmer': {
+                    '0%': { backgroundPosition: '-200% 0' },
+                    '100%': { backgroundPosition: '200% 0' }
+                },
+                'pulse-glow': {
+                    '0%, 100%': { boxShadow: '0 0 10px 0px rgba(139, 92, 246, 0.7)' },
+                    '50%': { boxShadow: '0 0 20px 5px rgba(139, 92, 246, 0.9)' }
+                },
+                'float': {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-10px)' }
                 }
 			},
 			animation: {
@@ -142,8 +154,17 @@ export default {
 				'fade-in': 'fade-in 0.5s ease-out',
 				'slide-up': 'slide-up 0.5s ease-out',
 				'slide-in-right': 'slide-in-right 0.5s ease-out',
-                'blob': 'blob 7s infinite ease-in-out'
-			}
+                'blob': 'blob 7s infinite ease-in-out',
+                'shimmer': 'shimmer 2s infinite linear',
+                'pulse-glow': 'pulse-glow 2s infinite ease-in-out',
+                'float': 'float 6s infinite ease-in-out'
+			},
+            transitionProperty: {
+                'height': 'height',
+                'spacing': 'margin, padding',
+                'width': 'width',
+                'transform': 'transform'
+            }
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
