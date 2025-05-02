@@ -34,8 +34,30 @@ const HowItWorksSection: React.FC = () => {
   return (
     <section className="py-20 relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/4 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+        <motion.div 
+          className="absolute top-1/4 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
+          animate={{
+            x: [0, 30, -20, 0],
+            scale: [1, 1.1, 0.9, 1],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        />
+        <motion.div 
+          className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"
+          animate={{
+            y: [0, 20, -20, 0],
+            scale: [1, 0.9, 1.1, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        />
       </div>
       
       <div className="container mx-auto px-4">
@@ -66,8 +88,12 @@ const HowItWorksSection: React.FC = () => {
                 duration: 0.5,
                 delay: index * 0.1
               }}
+              whileHover={{
+                y: -5,
+                transition: { duration: 0.2 }
+              }}
             >
-              <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 h-full">
+              <div className="bg-card/50 backdrop-blur-sm border border-border hover:border-primary/30 rounded-xl p-6 h-full">
                 <div className={cn("w-12 h-12 rounded-full bg-gradient-to-br", step.color, "flex items-center justify-center text-white text-xl font-bold mb-4")}>
                   {step.number}
                 </div>
@@ -88,6 +114,11 @@ const HowItWorksSection: React.FC = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
+          whileHover={{
+            scale: 1.02,
+            boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
+            transition: { duration: 0.3 }
+          }}
         >
           <h3 className="text-2xl font-bold mb-3">Enhanced Safety Through Verification</h3>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">

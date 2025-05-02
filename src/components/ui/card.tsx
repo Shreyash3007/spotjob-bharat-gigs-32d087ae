@@ -1,6 +1,6 @@
 
 import * as React from "react"
-import { motion } from "framer-motion"
+import { motion, type HTMLMotionProps } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 const cardVariants = {
@@ -40,11 +40,12 @@ const Card = React.forwardRef<
 Card.displayName = "Card"
 
 // Animated Card with Framer Motion
-type AnimatedCardProps = React.HTMLAttributes<HTMLDivElement> & { 
+type AnimatedCardProps = Omit<HTMLMotionProps<"div">, "animate" | "initial" | "whileHover"> & { 
   animated?: boolean;
   variants?: any;
   whileHover?: any;
   transition?: any;
+  className?: string;
 }
 
 const AnimatedCard = React.forwardRef<HTMLDivElement, AnimatedCardProps>(

@@ -1,7 +1,7 @@
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { 
   ArrowRight, 
   Play, 
@@ -17,8 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { useInView } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import LandingFooter from "@/components/landing/LandingFooter";
 import FeatureCard from "@/components/landing/FeatureCard";
@@ -43,38 +41,38 @@ const LandingPage: React.FC = () => {
     {
       title: "Find Jobs Near You",
       description: "Discover flexible gigs and jobs in your neighborhood with our advanced location-based search",
-      icon: <Globe className="w-8 h-8 text-primary mb-2" />,
-      color: "from-blue-500 to-cyan-400"
+      icon: <Globe className="w-6 h-6 stroke-current" strokeWidth={1.5} />,
+      color: "bg-gradient-to-br from-blue-500 to-cyan-400"
     },
     {
       title: "Easy Application",
       description: "Apply with a single swipe and connect directly with employers - no lengthy forms required",
-      icon: <ArrowRight className="w-8 h-8 text-primary mb-2" />,
-      color: "from-purple-500 to-indigo-600"
+      icon: <ArrowRight className="w-6 h-6 stroke-current" strokeWidth={1.5} />,
+      color: "bg-gradient-to-br from-purple-500 to-indigo-600"
     },
     {
       title: "Verified Profiles",
       description: "All users go through our KYC verification to ensure safety and trust within our community",
-      icon: <Award className="w-8 h-8 text-primary mb-2" />,
-      color: "from-amber-500 to-orange-400"
+      icon: <Award className="w-6 h-6 stroke-current" strokeWidth={1.5} />,
+      color: "bg-gradient-to-br from-amber-500 to-orange-400"
     },
     {
       title: "Real-time Matching",
       description: "Our intelligent algorithm matches your skills with the perfect opportunities",
-      icon: <TrendingUp className="w-8 h-8 text-primary mb-2" />,
-      color: "from-green-500 to-emerald-400"
+      icon: <TrendingUp className="w-6 h-6 stroke-current" strokeWidth={1.5} />,
+      color: "bg-gradient-to-br from-green-500 to-emerald-400"
     },
     {
       title: "Community Support",
       description: "Join a thriving community of freelancers and employers helping each other succeed",
-      icon: <Users className="w-8 h-8 text-primary mb-2" />,
-      color: "from-pink-500 to-rose-400"
+      icon: <Users className="w-6 h-6 stroke-current" strokeWidth={1.5} />,
+      color: "bg-gradient-to-br from-pink-500 to-rose-400"
     },
     {
       title: "Innovative Solutions",
       description: "We're constantly evolving with new features to make finding jobs easier than ever",
-      icon: <Lightbulb className="w-8 h-8 text-primary mb-2" />,
-      color: "from-violet-500 to-purple-400"
+      icon: <Lightbulb className="w-6 h-6 stroke-current" strokeWidth={1.5} />,
+      color: "bg-gradient-to-br from-violet-500 to-purple-400"
     },
   ];
 
@@ -121,9 +119,47 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-[40vh] -left-[10vw] w-[70vw] h-[70vh] bg-primary/20 rounded-full blur-[120px] opacity-50" />
-        <div className="absolute top-[40vh] -right-[20vw] w-[80vw] h-[80vh] bg-blue-500/20 rounded-full blur-[120px] opacity-40" />
-        <div className="absolute top-[100vh] -left-[20vw] w-[70vw] h-[70vh] bg-purple-500/20 rounded-full blur-[120px] opacity-30" />
+        <motion.div 
+          className="absolute -top-[40vh] -left-[10vw] w-[70vw] h-[70vh] bg-primary/20 rounded-full blur-[120px] opacity-50 animate-blob"
+          animate={{
+            x: [0, 30, -20, 0],
+            y: [0, -50, 20, 0],
+            scale: [1, 1.1, 0.9, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            repeatType: "reverse"
+          }}
+        />
+        <motion.div 
+          className="absolute top-[40vh] -right-[20vw] w-[80vw] h-[80vh] bg-blue-500/20 rounded-full blur-[120px] opacity-40 animate-blob"
+          animate={{
+            x: [0, -40, 30, 0],
+            y: [0, 30, -40, 0],
+            scale: [1, 0.9, 1.1, 1],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            repeatType: "reverse",
+            delay: 2
+          }}
+        />
+        <motion.div 
+          className="absolute top-[100vh] -left-[20vw] w-[70vw] h-[70vh] bg-purple-500/20 rounded-full blur-[120px] opacity-30 animate-blob"
+          animate={{
+            x: [0, 40, -30, 0],
+            y: [0, -30, 40, 0],
+            scale: [1, 1.1, 0.9, 1],
+          }}
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            repeatType: "reverse",
+            delay: 4
+          }}
+        />
       </div>
 
       {/* Header */}
@@ -178,7 +214,7 @@ const LandingPage: React.FC = () => {
                   size="lg" 
                   className="btn-shimmer bg-gradient-to-r from-primary to-blue-600 text-white text-lg py-6 px-8 h-auto"
                 >
-                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  Get Started <ArrowRight className="ml-2 h-5 w-5" strokeWidth={1.5} />
                 </Button>
                 
                 <Button 
@@ -219,7 +255,7 @@ const LandingPage: React.FC = () => {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.5 }}
                 >
-                  <Users className="h-5 w-5" />
+                  <Users className="h-5 w-5" strokeWidth={1.5} />
                   <p className="text-xs font-medium mt-1">2,000+ Users</p>
                 </motion.div>
                 
@@ -229,7 +265,7 @@ const LandingPage: React.FC = () => {
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.9, duration: 0.5 }}
                 >
-                  <Star className="h-5 w-5" />
+                  <Star className="h-5 w-5" strokeWidth={1.5} />
                   <p className="text-xs font-medium mt-1">Top Rated</p>
                 </motion.div>
               </div>
@@ -367,8 +403,31 @@ const LandingPage: React.FC = () => {
           >
             {/* Background elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"></div>
+              <motion.div 
+                className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.1, 0.2, 0.1],
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  repeatType: "reverse"
+                }}
+              ></motion.div>
+              <motion.div 
+                className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2"
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: [0.1, 0.15, 0.1],
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  delay: 2
+                }}
+              ></motion.div>
             </div>
 
             <div className="relative z-10 text-center">
@@ -387,7 +446,7 @@ const LandingPage: React.FC = () => {
                   size="lg" 
                   className="text-primary font-medium text-lg h-auto py-6 px-8"
                 >
-                  Sign Up Now <Rocket className="ml-2 h-5 w-5" />
+                  Sign Up Now <Rocket className="ml-2 h-5 w-5" strokeWidth={1.5} />
                 </Button>
                 
                 <Button 
@@ -396,7 +455,7 @@ const LandingPage: React.FC = () => {
                   size="lg"
                   className="text-white border-white/30 hover:bg-white/10 text-lg h-auto py-6 px-8"
                 >
-                  Explore Jobs Map <Globe className="ml-2 h-5 w-5" />
+                  Explore Jobs Map <Globe className="ml-2 h-5 w-5" strokeWidth={1.5} />
                 </Button>
               </div>
             </div>

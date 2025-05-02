@@ -36,7 +36,7 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
       }}
     >
       <div className="flex items-center mb-4">
-        <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
+        <div className="w-12 h-12 rounded-full overflow-hidden mr-4 border border-primary/20">
           <img
             src={testimonial.image}
             alt={testimonial.name}
@@ -54,11 +54,12 @@ const TestimonialCard: React.FC<TestimonialCardProps> = ({
           <Star 
             key={i}
             className={`w-4 h-4 ${i < testimonial.rating ? "text-amber-400 fill-amber-400" : "text-gray-300"}`}
+            strokeWidth={1.5}
           />
         ))}
       </div>
       
-      <p className="text-muted-foreground">"{testimonial.content}"</p>
+      <p className="text-muted-foreground italic">"<span className="not-italic text-foreground">{testimonial.content}</span>"</p>
     </motion.div>
   );
 };

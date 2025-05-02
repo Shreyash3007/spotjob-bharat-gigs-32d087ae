@@ -2,7 +2,7 @@
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
-import { motion } from "framer-motion"
+import { motion, type HTMLMotionProps } from "framer-motion"
 
 import { cn } from "@/lib/utils"
 
@@ -64,13 +64,18 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 Button.displayName = "Button"
 
 // Motion Button with animation effects
-interface MotionButtonProps extends ButtonProps {
+interface MotionButtonProps extends Omit<HTMLMotionProps<"button">, "animate" | "whileHover" | "whileTap"> {
+  variant?: VariantProps<typeof buttonVariants>["variant"];
+  size?: VariantProps<typeof buttonVariants>["size"];
+  animated?: VariantProps<typeof buttonVariants>["animated"];
+  className?: string;
+  asChild?: boolean;
   whileHover?: any;
   whileTap?: any;
 }
 
 const MotionButton = React.forwardRef<HTMLButtonElement, MotionButtonProps>(
-  ({ className, variant, size, animated, whileHover, whileTap, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, animated, whileHover, whileTap, ...props }, ref) => {
     return (
       <motion.button
         className={cn(buttonVariants({ variant, size, animated, className }))}

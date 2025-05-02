@@ -34,8 +34,10 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
       }}
     >
       <div className="relative z-10">
-        <div className={cn("w-12 h-12 rounded-lg bg-gradient-to-br", gradientClass, "flex items-center justify-center text-white mb-4")}>
-          {icon}
+        <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center mb-4", gradientClass)}>
+          <div className="text-white w-6 h-6">
+            {icon}
+          </div>
         </div>
         <h3 className="text-xl font-bold mb-2">{title}</h3>
         <p className="text-muted-foreground">{description}</p>

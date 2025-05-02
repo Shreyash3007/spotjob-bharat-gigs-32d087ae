@@ -35,7 +35,6 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ hasScrolled }) => 
             <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-white font-bold text-2xl">S</div>
             <span className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">SpotJob</span>
           </div>
-          <div className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full ml-2">Beta</div>
         </motion.div>
         
         <div className="hidden md:flex items-center space-x-1">
@@ -55,8 +54,8 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ hasScrolled }) => 
           
           <div className="md:hidden">
             <Button variant="ghost" size="icon" onClick={() => navigate('/auth')}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 6H21M3 12H21M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 6H21M3 12H21M3 18H21" />
               </svg>
             </Button>
           </div>
