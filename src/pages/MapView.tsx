@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
@@ -8,7 +9,8 @@ import { Globe, Plus, Minus, MapPin, ArrowRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+// Set the Mapbox token directly
+mapboxgl.accessToken = 'pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw';
 
 const MapView: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -40,9 +42,10 @@ const MapView: React.FC = () => {
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
     map.current.on('move', () => {
-      setLng(map.current?.getCenter().lng.toFixed(4) as any);
-      setLat(map.current?.getCenter().lat.toFixed(4) as any);
-      setZoom(map.current?.getZoom().toFixed(2) as any);
+      if (!map.current) return;
+      setLng(parseFloat(map.current.getCenter().lng.toFixed(4)));
+      setLat(parseFloat(map.current.getCenter().lat.toFixed(4)));
+      setZoom(parseFloat(map.current.getZoom().toFixed(2)));
     });
 
     // Sample job postings (replace with actual data)
@@ -53,7 +56,7 @@ const MapView: React.FC = () => {
         description: 'Brew coffee, take orders, and provide excellent customer service.',
         company: 'Coffee Bliss Cafe',
         salary: '₹8,000 - ₹12,000 / month',
-        location: [77.3550, 28.6750],
+        location: [77.3550, 28.6750] as [number, number], // Explicitly type as tuple
       },
       {
         id: 2,
@@ -61,7 +64,7 @@ const MapView: React.FC = () => {
         description: 'Deliver food orders quickly and safely to customers.',
         company: 'Quick Eats Delivery',
         salary: '₹10,000 - ₹15,000 / month',
-        location: [77.3450, 28.6650],
+        location: [77.3450, 28.6650] as [number, number], // Explicitly type as tuple
       },
       {
         id: 3,
@@ -69,7 +72,7 @@ const MapView: React.FC = () => {
         description: 'Assist customers, manage inventory, and maintain store cleanliness.',
         company: 'Fashion Hub Retail',
         salary: '₹9,000 - ₹13,000 / month',
-        location: [77.3600, 28.6800],
+        location: [77.3600, 28.6800] as [number, number], // Explicitly type as tuple
       },
     ];
 
@@ -98,7 +101,7 @@ const MapView: React.FC = () => {
 
   return (
     <div className="map-container relative">
-      <div ref={mapContainer} className="mapboxgl-map" />
+      <div ref={mapContainer} className="mapboxgl-map h-screen" />
       <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg p-2 shadow-md z-10">
         <div>Longitude: {lng}</div>
         <div>Latitude: {lat}</div>

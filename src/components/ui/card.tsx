@@ -1,6 +1,5 @@
-
 import * as React from "react"
-import { motion, type HTMLMotionProps } from "framer-motion"
+import { motion, type MotionProps } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 const cardVariants = {
@@ -39,17 +38,15 @@ const Card = React.forwardRef<
 ))
 Card.displayName = "Card"
 
-// Animated Card with Framer Motion
-type AnimatedCardProps = Omit<HTMLMotionProps<"div">, "animate" | "initial" | "whileHover"> & { 
+// Fixed type definition to avoid conflicts between HTML attributes and motion props
+type AnimatedCardProps = React.HTMLAttributes<HTMLDivElement> & {
   animated?: boolean;
-  variants?: any;
-  whileHover?: any;
-  transition?: any;
+  motionProps?: MotionProps;
   className?: string;
 }
 
 const AnimatedCard = React.forwardRef<HTMLDivElement, AnimatedCardProps>(
-  ({ className, animated = false, variants, whileHover, transition, ...props }, ref) => {
+  ({ className, animated = false, motionProps, ...props }, ref) => {
     if (!animated) {
       return <Card ref={ref} className={className} {...props} />;
     }
@@ -61,11 +58,11 @@ const AnimatedCard = React.forwardRef<HTMLDivElement, AnimatedCardProps>(
           "rounded-lg border bg-card text-card-foreground shadow-sm",
           className
         )}
-        variants={variants || cardVariants}
+        variants={cardVariants}
         initial="hidden"
         animate="visible"
-        whileHover={whileHover || "hover"}
-        transition={transition}
+        whileHover="hover"
+        {...motionProps}
         {...props}
       />
     );

@@ -32,7 +32,7 @@ const HowItWorksSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 relative overflow-hidden">
+    <section className="py-20 relative overflow-hidden" id="how-it-works">
       <div className="absolute inset-0 -z-10">
         <motion.div 
           className="absolute top-1/4 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
