@@ -21,9 +21,8 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-// Default Mapbox token - This should ideally come from environment variables or Supabase secrets
-// For demo purposes only
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZS1haSIsImEiOiJjbG95eWQ5YnQwYmprMmtxcm84dGdoeHNkIn0.HWOKtgy07R0JTMHSJGJ60g';
+// Default Mapbox token
+const MAPBOX_TOKEN = 'pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw';
 
 const MapView = () => {
   const { jobs, filteredJobs, setJobFilters } = useApp();
@@ -32,8 +31,6 @@ const MapView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [mapToken, setMapToken] = useState<string>(MAPBOX_TOKEN);
-  const [customToken, setCustomToken] = useState('');
   const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
   
   const navigate = useNavigate();
@@ -46,7 +43,7 @@ const MapView = () => {
     if (!mapContainer.current || map.current) return;
 
     try {
-      mapboxgl.accessToken = mapToken;
+      mapboxgl.accessToken = MAPBOX_TOKEN;
       
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -87,7 +84,7 @@ const MapView = () => {
       setError("Failed to initialize map. Please check your API token.");
       setLoading(false);
     }
-  }, [mapToken]);
+  }, []);
 
   // Add markers when filteredJobs or map updates
   useEffect(() => {
@@ -103,23 +100,43 @@ const MapView = () => {
         // Create HTML element for marker
         const el = document.createElement('div');
         el.className = 'marker';
-        el.style.width = '25px';
-        el.style.height = '25px';
-        el.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="%237c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>')`;
+        el.style.width = '35px';
+        el.style.height = '35px';
+        el.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="%237c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>')`;
         el.style.backgroundSize = '100%';
+        el.style.cursor = 'pointer';
+        
+        // Add pulse animation
+        const pulse = document.createElement('div');
+        pulse.className = 'marker-pulse';
+        pulse.style.position = 'absolute';
+        pulse.style.width = '50px';
+        pulse.style.height = '50px';
+        pulse.style.borderRadius = '50%';
+        pulse.style.backgroundColor = 'rgba(124, 58, 237, 0.2)';
+        pulse.style.transform = 'translate(-25%, -25%)';
+        pulse.style.animation = 'pulse-animation 2s infinite';
+        el.appendChild(pulse);
         
         // Create popup content
         const popupContent = `
-          <div class="p-2 min-w-[220px]">
-            <h3 class="font-medium">${job.title}</h3>
-            <p class="text-sm text-gray-600">₹${job.pay.amount} · ${job.duration}</p>
+          <div class="p-3 min-w-[240px] rounded-lg shadow-md bg-white dark:bg-gray-800 border-t-4 border-primary">
+            <h3 class="font-medium text-lg">${job.title}</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">₹${job.pay.amount} · ${job.duration}</p>
+            <div class="flex justify-between items-center mt-2">
+              <span class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">${job.category}</span>
+              <button class="text-xs text-primary font-medium">View details</button>
+            </div>
           </div>
         `;
         
         // Create marker and add to map
         const marker = new mapboxgl.Marker(el)
           .setLngLat([job.location.lng, job.location.lat])
-          .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
+          .setPopup(new mapboxgl.Popup({ 
+            offset: 25,
+            className: 'custom-popup'
+          }).setHTML(popupContent))
           .addTo(map.current);
         
         // Add click event to marker
@@ -150,35 +167,6 @@ const MapView = () => {
     }
   };
 
-  const tryAgainWithToken = () => {
-    if (customToken.trim()) {
-      setMapToken(customToken.trim());
-      setLoading(true);
-      setError(null);
-      
-      // Remove the existing map instance
-      if (map.current) {
-        map.current.remove();
-        map.current = null;
-      }
-    } else {
-      toast.error("Please enter a valid Mapbox token");
-    }
-  };
-
-  const resetToken = () => {
-    setMapToken(MAPBOX_TOKEN);
-    setCustomToken('');
-    setLoading(true);
-    setError(null);
-    
-    // Remove the existing map instance
-    if (map.current) {
-      map.current.remove();
-      map.current = null;
-    }
-  };
-
   const handleJobCardClick = (job: JobPost) => {
     navigate(`/job/${job.id}`);
   };
@@ -189,11 +177,18 @@ const MapView = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
           {/* Sidebar with jobs list */}
           <div className="md:col-span-1 h-full overflow-y-auto">
-            <Card className="h-full border-0 md:border shadow-none md:shadow-md rounded-none md:rounded-lg">
+            <Card className="h-full border-0 md:border shadow-none md:shadow-md rounded-none md:rounded-lg bg-background/80 backdrop-blur-md">
               <CardHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm border-b pb-4">
                 <CardTitle className="text-xl flex justify-between items-center">
-                  <span>Jobs Near You</span>
-                  <Badge variant="outline" className="font-normal">
+                  <motion.span
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent"
+                  >
+                    Jobs Near You
+                  </motion.span>
+                  <Badge variant="outline" className="font-normal bg-gradient-to-r from-primary/10 to-blue-400/10 animate-pulse">
                     {filteredJobs.length} found
                   </Badge>
                 </CardTitle>
@@ -204,7 +199,7 @@ const MapView = () => {
                       placeholder="Search jobs..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
+                      className="pl-9 bg-background/50 border-muted/60 focus:border-primary/50"
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                   </div>
@@ -259,8 +254,11 @@ const MapView = () => {
                 {filteredJobs.length > 0 ? (
                   <div className="divide-y">
                     {filteredJobs.map((job) => (
-                      <div 
+                      <motion.div 
                         key={job.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
                         className={`p-4 cursor-pointer hover:bg-accent/50 transition-colors ${
                           selectedJob?.id === job.id ? 'bg-accent' : ''
                         }`}
@@ -273,21 +271,26 @@ const MapView = () => {
                         </div>
                         <div className="flex justify-between items-center mt-2">
                           <span className="text-primary font-medium">₹{job.pay.amount}</span>
-                          <Badge variant="outline">{job.category}</Badge>
+                          <Badge variant="outline" className="bg-gradient-to-r from-primary/5 to-blue-400/5">{job.category}</Badge>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3 }}
+                    className="flex flex-col items-center justify-center py-12 px-4 text-center"
+                  >
+                    <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mb-4 animate-blob">
                       <Search className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <h3 className="text-lg font-medium mb-1">No jobs found</h3>
                     <p className="text-muted-foreground text-sm">
                       Try adjusting your search or filters
                     </p>
-                  </div>
+                  </motion.div>
                 )}
               </CardContent>
             </Card>
@@ -297,48 +300,48 @@ const MapView = () => {
           <div className="md:col-span-2 h-full relative">
             <div ref={mapContainer} className="h-full w-full rounded-lg border overflow-hidden"></div>
             
+            {/* Add the pulse animation styles */}
+            <style jsx="true">{`
+              @keyframes pulse-animation {
+                0% {
+                  transform: scale(0.5);
+                  opacity: 1;
+                }
+                100% {
+                  transform: scale(2);
+                  opacity: 0;
+                }
+              }
+              
+              .custom-popup {
+                border-radius: 8px !important;
+                overflow: hidden !important;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+              }
+              
+              .custom-popup .mapboxgl-popup-content {
+                padding: 0 !important;
+                border-radius: 8px !important;
+                overflow: hidden !important;
+              }
+              
+              .custom-popup .mapboxgl-popup-tip {
+                border-top-color: #7c3aed !important;
+              }
+            `}</style>
+            
             {/* Loading overlay */}
             {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-sm"
+              >
                 <div className="text-center">
                   <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
                   <p className="font-medium">Loading map...</p>
                 </div>
-              </div>
-            )}
-            
-            {/* Error overlay */}
-            {error && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm p-6">
-                <Card className="max-w-md w-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertTriangle className="h-5 w-5 text-amber-500" />
-                      Map Loading Error
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p>{error}</p>
-                    <div className="space-y-2">
-                      <label htmlFor="mapbox-token" className="text-sm font-medium">
-                        Enter your Mapbox token:
-                      </label>
-                      <Input
-                        id="mapbox-token"
-                        value={customToken}
-                        onChange={(e) => setCustomToken(e.target.value)}
-                        placeholder="pk.eyJ1Ijoi..."
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={tryAgainWithToken}>Try with this token</Button>
-                      <Button variant="outline" onClick={resetToken}>
-                        Reset to default
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              </motion.div>
             )}
             
             {/* Selected job card */}
@@ -358,23 +361,53 @@ const MapView = () => {
                     >
                       <X className="h-4 w-4" />
                     </Button>
-                    <CardContent className="p-4">
-                      <h3 className="font-medium text-lg mb-1">{selectedJob.title}</h3>
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <CardContent className="p-4 pb-6">
+                      <motion.h3 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="font-medium text-lg mb-1"
+                      >
+                        {selectedJob.title}
+                      </motion.h3>
+                      <motion.div 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex items-center gap-1 text-sm text-muted-foreground"
+                      >
                         <MapPin className="h-3 w-3" />
                         <span>{selectedJob.location.address}</span>
-                      </div>
-                      <div className="flex justify-between items-center mt-2 mb-3">
-                        <span className="text-primary font-medium">₹{selectedJob.pay.amount}</span>
-                        <Badge variant="outline">{selectedJob.duration}</Badge>
-                      </div>
-                      <p className="text-sm line-clamp-2 mb-3">{selectedJob.description}</p>
-                      <Button 
-                        className="w-full"
-                        onClick={() => handleJobCardClick(selectedJob)}
+                      </motion.div>
+                      <motion.div 
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="flex justify-between items-center mt-2 mb-3"
                       >
-                        View Details
-                      </Button>
+                        <span className="text-primary font-medium">₹{selectedJob.pay.amount}</span>
+                        <Badge variant="outline" className="bg-gradient-to-r from-primary/10 to-blue-400/10">{selectedJob.duration}</Badge>
+                      </motion.div>
+                      <motion.p 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="text-sm line-clamp-2 mb-3"
+                      >
+                        {selectedJob.description}
+                      </motion.p>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.6, type: "spring" }}
+                      >
+                        <Button 
+                          className="w-full bg-gradient-to-r from-primary to-blue-600 hover:shadow-lg hover:shadow-primary/20 transition-all duration-300"
+                          onClick={() => handleJobCardClick(selectedJob)}
+                        >
+                          View Details
+                        </Button>
+                      </motion.div>
                     </CardContent>
                   </Card>
                 </motion.div>

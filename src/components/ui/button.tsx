@@ -47,38 +47,40 @@ export interface ButtonProps
   asChild?: boolean
 }
 
-const ButtonWithAnimation = React.forwardRef<HTMLButtonElement, ButtonProps & { useMotion?: boolean }>(
-  ({ className, variant, size, animated, asChild = false, useMotion = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : useMotion ? motion.button : "button";
+// Regular Button without motion effects
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, animated, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button";
     
-    const motionProps = useMotion ? {
-      whileHover: { scale: 1.05 },
-      whileTap: { scale: 0.95 },
-      transition: { duration: 0.2 }
-    } : {};
-
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, animated, className }))}
-        ref={ref as any}
-        {...motionProps}
+        ref={ref}
         {...props}
       />
     )
   }
 )
-ButtonWithAnimation.displayName = "ButtonWithAnimation"
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (props, ref) => {
-    return <ButtonWithAnimation {...props} ref={ref} />
-  }
-)
 Button.displayName = "Button"
 
-const MotionButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  (props, ref) => {
-    return <ButtonWithAnimation {...props} useMotion={true} ref={ref} />
+// Motion Button with animation effects
+interface MotionButtonProps extends ButtonProps {
+  whileHover?: any;
+  whileTap?: any;
+}
+
+const MotionButton = React.forwardRef<HTMLButtonElement, MotionButtonProps>(
+  ({ className, variant, size, animated, whileHover, whileTap, asChild = false, ...props }, ref) => {
+    return (
+      <motion.button
+        className={cn(buttonVariants({ variant, size, animated, className }))}
+        ref={ref}
+        whileHover={whileHover || { scale: 1.05 }}
+        whileTap={whileTap || { scale: 0.95 }}
+        transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        {...props}
+      />
+    )
   }
 )
 MotionButton.displayName = "MotionButton"

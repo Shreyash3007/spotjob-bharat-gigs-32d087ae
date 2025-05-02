@@ -29,11 +29,11 @@ const Checkbox = React.forwardRef<
         }}
         transition={{
           type: "spring",
-          stiffness: 300,
-          damping: 20,
+          stiffness: 400,
+          damping: 25,
         }}
       >
-        <Check className="h-4 w-4" />
+        <Check className="h-4 w-4" strokeWidth={3} />
       </motion.div>
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>

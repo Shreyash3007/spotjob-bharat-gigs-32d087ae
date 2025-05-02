@@ -23,39 +23,54 @@ const cardVariants = {
   }
 }
 
-const AnimatedCard = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { animated?: boolean }
->(({ className, animated = false, ...props }, ref) => {
-  const Component = animated ? motion.div : "div";
-  const animationProps = animated ? {
-    variants: cardVariants,
-    initial: "hidden",
-    animate: "visible",
-    whileHover: "hover"
-  } : {};
-  
-  return (
-    <Component
-      ref={ref as any}
-      className={cn(
-        "rounded-lg border bg-card text-card-foreground shadow-sm",
-        className
-      )}
-      {...animationProps}
-      {...props}
-    />
-  )
-})
-AnimatedCard.displayName = "Card"
-
+// Standard Card Component (no animations)
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <AnimatedCard ref={ref} className={className} {...props} />
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-lg border bg-card text-card-foreground shadow-sm",
+      className
+    )}
+    {...props}
+  />
 ))
 Card.displayName = "Card"
+
+// Animated Card with Framer Motion
+type AnimatedCardProps = React.HTMLAttributes<HTMLDivElement> & { 
+  animated?: boolean;
+  variants?: any;
+  whileHover?: any;
+  transition?: any;
+}
+
+const AnimatedCard = React.forwardRef<HTMLDivElement, AnimatedCardProps>(
+  ({ className, animated = false, variants, whileHover, transition, ...props }, ref) => {
+    if (!animated) {
+      return <Card ref={ref} className={className} {...props} />;
+    }
+    
+    return (
+      <motion.div
+        ref={ref}
+        className={cn(
+          "rounded-lg border bg-card text-card-foreground shadow-sm",
+          className
+        )}
+        variants={variants || cardVariants}
+        initial="hidden"
+        animate="visible"
+        whileHover={whileHover || "hover"}
+        transition={transition}
+        {...props}
+      />
+    );
+  }
+)
+AnimatedCard.displayName = "AnimatedCard"
 
 const CardHeader = React.forwardRef<
   HTMLDivElement,
