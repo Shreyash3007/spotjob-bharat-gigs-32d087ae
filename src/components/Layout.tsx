@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Search, PlusCircle, User, Home, Menu, X, LogIn } from "lucide-react";
@@ -45,7 +46,7 @@ const Layout = ({ children, hideNav = false, fullHeight = false }: LayoutProps) 
   }, [location.pathname]);
 
   const navItems = [
-    { path: "/", icon: Home, label: "Home" },
+    { path: "/home", icon: Home, label: "Home" },
     { path: "/map", icon: MapPin, label: "Map" },
     { path: "/swipe", icon: Search, label: "Browse" },
     { path: "/post-job", icon: PlusCircle, label: "Post" },

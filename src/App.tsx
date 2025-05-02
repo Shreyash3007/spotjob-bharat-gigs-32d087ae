@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
@@ -20,6 +20,11 @@ import NotFound from "./pages/NotFound";
 import JobDetails from "./pages/JobDetails";
 import { AppProvider } from "./context/AppContext";
 import Auth from "./pages/Auth";
+import LandingPage from "./pages/LandingPage";
+
+// Set Mapbox token globally
+import mapboxgl from 'mapbox-gl';
+mapboxgl.accessToken = 'pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw';
 
 const queryClient = new QueryClient();
 
@@ -77,7 +82,8 @@ const App = () => {
                   <Sonner expand={true} closeButton richColors />
                   <AnimatePresence mode="wait">
                     <Routes>
-                      <Route path="/" element={<Index />} />
+                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/home" element={<Index />} />
                       <Route path="/map" element={<MapView />} />
                       <Route path="/swipe" element={<JobSwipe />} />
                       <Route path="/post-job" element={<PostJob />} />

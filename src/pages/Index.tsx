@@ -1,9 +1,8 @@
-
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { useApp } from "@/context/AppContext";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -13,10 +12,17 @@ import {
 } from "@/components/ui/card";
 import { JobCategory } from "@/types";
 import { ArrowRight, Check, MapPin } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const Index = () => {
   const { filteredJobs, setJobFilters } = useApp();
   const [recentJobs, setRecentJobs] = useState(filteredJobs.slice(0, 3));
+  const { user } = useAuth();
+
+  // If user is not authenticated, redirect to landing page
+  if (!user) {
+    return <Navigate to="/" />;
+  }
 
   useEffect(() => {
     // Sort by timestamp and get the most recent ones
@@ -72,7 +78,7 @@ const Index = () => {
             </p>
             <div className="animate-fade-in-up delay-200 mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/swipe">
-                <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6 h-auto">
+                <Button size="lg" className="w-full sm:w-auto text-base px-8 py-6 h-auto btn-shimmer">
                   Find Jobs
                 </Button>
               </Link>
