@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -236,21 +235,83 @@ const LandingPage: React.FC = () => {
             >
               <div className="relative w-full max-w-md mx-auto">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-3xl blur-xl transform rotate-3"></div>
-                <div className="frost-glass rounded-3xl overflow-hidden shadow-2xl relative z-10">
-                  <img 
-                    src="https://source.unsplash.com/800x1000/?job,work,gig,mobile,app" 
-                    alt="SpotJob mobile app" 
-                    className="w-full h-auto rounded-t-3xl"
-                  />
-                  <div className="px-6 py-5 bg-card/40 backdrop-blur-xl">
-                    <h3 className="font-semibold text-lg mb-1">SpotJob Mobile Experience</h3>
-                    <p className="text-sm text-muted-foreground">Find work opportunities wherever you go</p>
+                <div className="rounded-3xl overflow-hidden shadow-xl relative z-10 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+                  <div className="p-6">
+                    <div className="flex items-center mb-6">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg text-gray-900 dark:text-white">Our Mission</h4>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Connecting talent with opportunities</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 mb-6">
+                      <div className="flex items-start">
+                        <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800/30 flex items-center justify-center mr-4 mt-0.5 flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600 dark:text-green-400">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <path d="m9 11 3 3L22 4"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-gray-900 dark:text-white mb-1">For Job Seekers</h5>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">Find verified local opportunities that match your skills and availability</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-800/30 flex items-center justify-center mr-4 mt-0.5 flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 dark:text-blue-400">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-gray-900 dark:text-white mb-1">For Employers</h5>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">Access a pool of pre-vetted local talent for your short or long-term needs</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start">
+                        <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-800/30 flex items-center justify-center mr-4 mt-0.5 flex-shrink-0">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-600 dark:text-purple-400">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-gray-900 dark:text-white mb-1">Trust & Security</h5>
+                          <p className="text-sm text-gray-700 dark:text-gray-300">Our verification process ensures safety and reliability for everyone</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Join our community</p>
+                          <p className="font-medium text-gray-900 dark:text-white">10,000+ users trust SpotJob</p>
+                        </div>
+                        <div className="flex -space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">J</div>
+                          <div className="w-8 h-8 rounded-full bg-pink-500 border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">S</div>
+                          <div className="w-8 h-8 rounded-full bg-green-500 border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">M</div>
+                          <div className="w-8 h-8 rounded-full bg-yellow-500 border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">R</div>
+                          <div className="w-8 h-8 rounded-full bg-gray-200 border-2 border-white dark:border-gray-800 dark:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-300 text-xs font-bold">+</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
                 {/* Animated elements */}
                 <motion.div 
-                  className="absolute -right-6 -top-6 bg-purple-500/90 text-white p-3 rounded-xl shadow-lg"
+                  className="absolute -right-6 -top-6 bg-purple-500 text-white p-3 rounded-xl shadow-lg"
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.5 }}
@@ -260,7 +321,7 @@ const LandingPage: React.FC = () => {
                 </motion.div>
                 
                 <motion.div 
-                  className="absolute -left-10 top-32 bg-blue-500/90 text-white p-3 rounded-xl shadow-lg"
+                  className="absolute -left-10 top-32 bg-blue-500 text-white p-3 rounded-xl shadow-lg"
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.9, duration: 0.5 }}

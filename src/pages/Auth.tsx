@@ -1,6 +1,5 @@
-
-import { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -28,6 +27,15 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/context/AuthContext";
 import { Mail, Lock, Loader2, Github } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger, 
+} from "@/components/ui/dialog";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -42,14 +50,23 @@ const signupSchema = loginSchema.extend({
   path: ["confirmPassword"],
 });
 
+// Add a reset password schema
+const resetPasswordSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email address" }),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
 type SignupFormValues = z.infer<typeof signupSchema>;
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 export default function Auth() {
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, signIn, signUp, signInWithGoogle } = useAuth();
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -66,6 +83,14 @@ export default function Auth() {
       password: "",
       confirmPassword: "",
       name: "",
+    },
+  });
+
+  // Add reset password form
+  const resetPasswordForm = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: "",
     },
   });
 
@@ -93,24 +118,80 @@ export default function Auth() {
     setIsSubmitting(true);
     
     try {
-      const { error } = await signUp(data.email, data.password, { 
+      const { error: signupError } = await signUp(data.email, data.password, { 
         name: data.name,
       });
       
-      if (error) {
-        throw error;
+      if (signupError) {
+        throw signupError;
       }
       
+      // Don't automatically sign in, instead show email verification message
       toast.success("Account created successfully!", {
-        description: "Please check your email to verify your account."
+        description: "Please check your email to verify your account before signing in."
       });
+      
+      // Reset form and switch to login tab
+      signupForm.reset();
       setActiveTab("login");
+      
+      // Add verification status to pass to login form
+      sessionStorage.setItem('pendingVerification', data.email);
+      
     } catch (error: any) {
       console.error("Signup error:", error);
       toast.error(error.message || "Failed to create account");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const onResetPasswordSubmit = async (data: ResetPasswordFormValues) => {
+    setIsResettingPassword(true);
+    
+    try {
+      const { error } = await resetPassword(data.email);
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast.success("Password reset email sent!", {
+        description: "Please check your email for instructions to reset your password."
+      });
+      setResetPasswordDialogOpen(false);
+      resetPasswordForm.reset();
+    } catch (error: any) {
+      console.error("Password reset error:", error);
+      toast.error(error.message || "Failed to send password reset email");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  // Add a state for pending verification
+  const [pendingVerification, setPendingVerification] = useState<string | null>(null);
+  
+  // Check for pending verification on mount or from location state
+  useEffect(() => {
+    // Check localStorage
+    const email = sessionStorage.getItem('pendingVerification');
+    if (email) {
+      setPendingVerification(email);
+    }
+    
+    // Check location state for verification required message from protected routes
+    const state = location.state as { verificationRequired?: boolean; email?: string };
+    if (state?.verificationRequired && state?.email) {
+      setPendingVerification(state.email);
+      setActiveTab("login");
+    }
+  }, [location]);
+
+  // Close the verification notice
+  const closeVerificationNotice = () => {
+    setPendingVerification(null);
+    sessionStorage.removeItem('pendingVerification');
   };
 
   // If already logged in, redirect to profile
@@ -164,6 +245,28 @@ export default function Auth() {
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.2 }}
                   >
+                    {pendingVerification && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <div className="ml-3 flex-1 md:flex md:justify-between">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                              Verification email sent to <span className="font-medium">{pendingVerification}</span>. Please check your inbox and verify your email before signing in.
+                            </p>
+                            <button 
+                              className="ml-3 text-blue-700 dark:text-blue-300 hover:underline text-sm flex-shrink-0"
+                              onClick={closeVerificationNotice}
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <Form {...loginForm}>
                       <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
                         <FormField
@@ -208,6 +311,64 @@ export default function Auth() {
                             </FormItem>
                           )}
                         />
+                        <div className="flex justify-end">
+                          <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+                            <DialogTrigger asChild>
+                              <Button variant="link" className="px-0 text-sm text-primary" type="button">
+                                Forgot Password?
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                              <DialogHeader>
+                                <DialogTitle>Reset Password</DialogTitle>
+                                <DialogDescription>
+                                  Enter your email address and we'll send you a link to reset your password.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <Form {...resetPasswordForm}>
+                                <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4">
+                                  <FormField
+                                    control={resetPasswordForm.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel>Email</FormLabel>
+                                        <FormControl>
+                                          <div className="relative">
+                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input 
+                                              placeholder="you@example.com" 
+                                              type="email"
+                                              className="pl-9"
+                                              {...field} 
+                                            />
+                                          </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                  <DialogFooter>
+                                    <Button 
+                                      type="submit" 
+                                      className="w-full" 
+                                      disabled={isResettingPassword}
+                                    >
+                                      {isResettingPassword ? (
+                                        <>
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                          Sending email...
+                                        </>
+                                      ) : (
+                                        "Send Reset Link"
+                                      )}
+                                    </Button>
+                                  </DialogFooter>
+                                </form>
+                              </Form>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                         <Button 
                           type="submit" 
                           className="w-full" 
