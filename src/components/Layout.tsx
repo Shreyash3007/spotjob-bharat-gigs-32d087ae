@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Search, PlusCircle, User, Home, Menu, X, LogIn } from "lucide-react";
@@ -7,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useApp } from "@/context/AppContext";
 import { motion } from "framer-motion";
+import NetworkStatusBanner from "./NetworkStatusBanner";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,7 +20,7 @@ const Layout = ({ children, hideNav = false, fullHeight = false }: LayoutProps) 
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user } = useApp();
+  const { user, isOnline } = useApp();
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -58,6 +58,8 @@ const Layout = ({ children, hideNav = false, fullHeight = false }: LayoutProps) 
       "flex flex-col w-full bg-background",
       fullHeight ? "h-screen" : "min-h-screen"
     )}>
+      <NetworkStatusBanner />
+      
       <header className={cn(
         "sticky top-0 z-20 border-b backdrop-blur-md transition-all duration-200",
         scrolled 
@@ -199,15 +201,21 @@ const Layout = ({ children, hideNav = false, fullHeight = false }: LayoutProps) 
               <button
                 key={item.path}
                 className={cn(
-                  "flex flex-col items-center py-2 px-4 w-full text-xs transition-colors",
-                  location.pathname === item.path
+                  "flex flex-1 flex-col items-center justify-center py-2 text-xs",
+                  location.pathname === item.path 
                     ? "text-primary"
-                    : "text-muted-foreground hover:text-primary"
+                    : "text-muted-foreground"
                 )}
                 onClick={() => navigate(item.path)}
+                disabled={!isOnline && item.path !== '/profile'} // Disable navigation when offline except for profile
               >
-                <item.icon className="h-5 w-5 mb-1" />
-                <span>{item.label}</span>
+                <item.icon className={cn(
+                  "h-5 w-5 mb-1",
+                  location.pathname === item.path 
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                )} />
+                {item.label}
               </button>
             ))}
           </div>

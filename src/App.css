@@ -1,4 +1,3 @@
-
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -9,30 +8,19 @@
 .logo {
   height: 6em;
   padding: 1.5em;
-  will-change: filter;
   transition: filter 300ms;
 }
 
 .logo:hover {
-  filter: drop-shadow(0 0 2em hsl(var(--primary)));
+  filter: drop-shadow(0 0 1em hsl(var(--primary)));
 }
 
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -44,232 +32,91 @@
   color: #888;
 }
 
-/* Enhanced UI Effects */
-.glow {
-  box-shadow: 0 0 20px 8px rgba(var(--primary), 0.4);
-  animation: pulse-glow 3s infinite;
+/* Essential UI Effects - Performance Optimized */
+.glass-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.dark .glow {
-  box-shadow: 0 0 20px 8px rgba(var(--primary), 0.6);
+.dark .glass-card {
+  background: rgba(17, 25, 40, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.text-shadow {
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-}
-
-.dark .text-shadow {
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-}
-
-/* Advanced fluid transitions */
-.fluid-transition {
-  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Advanced skew effects */
-.skew-hover {
-  transition: transform 0.4s ease;
-  will-change: transform;
-}
-
-.skew-hover:hover {
-  transform: skew(-5deg) translateY(-5px);
-}
-
-/* Enhanced 3D card effect */
-.card-3d {
-  transform-style: preserve-3d;
-  perspective: 1200px;
-  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.card-3d-content {
-  transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1);
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-.card-3d:hover .card-3d-content {
-  transform: translateZ(30px) rotateX(3deg) rotateY(3deg);
-}
-
-/* Advanced gradient buttons */
-.gradient-btn {
-  background: linear-gradient(90deg, hsl(var(--primary)), hsl(220, 100%, 50%));
-  color: white;
+/* Simplified button with minimal transition */
+.primary-button {
   position: relative;
-  isolation: isolate;
-  overflow: hidden;
   font-weight: 600;
-  letter-spacing: 0.025em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.gradient-btn::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg, 
-    transparent, 
-    rgba(255, 255, 255, 0.2), 
-    transparent
-  );
-  transition: left 0.7s;
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.gradient-btn:hover::before {
-  left: 100%;
+.primary-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Glass morphism effects */
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
-}
-
-.dark .glass-morphism {
-  background: rgba(17, 25, 40, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Enhanced animations */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 15px 5px rgba(139, 92, 246, 0.5); }
-  50% { box-shadow: 0 0 25px 10px rgba(139, 92, 246, 0.8); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.animate-float {
-  animation: float 6s infinite ease-in-out;
-}
-
-.animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0),
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0)
-  );
-  background-size: 200% 100%;
-  animation: shimmer 3s infinite;
-}
-
-/* Neo-brutalism style buttons */
-.neo-button {
-  border: 3px solid #000;
-  box-shadow: 5px 5px 0px #000;
-  transform: translate(-4px, -4px);
-  transition: all 0.3s ease;
-}
-
-.neo-button:hover {
-  transform: translate(-6px, -6px);
-  box-shadow: 7px 7px 0px #000;
-}
-
-.neo-button:active {
-  transform: translate(-1px, -1px);
-  box-shadow: 2px 2px 0px #000;
-}
-
-/* Enhanced blob animations */
-.blob-bg {
-  position: absolute;
-  width: 400px;
-  height: 400px;
-  background: linear-gradient(
-    180deg,
-    rgba(139, 92, 246, 0.2) 0%,
-    rgba(30, 64, 175, 0.2) 100%
-  );
-  border-radius: 50%;
-  filter: blur(90px);
-  z-index: -1;
-  animation: blob 15s infinite alternate;
-  opacity: 0.4;
-}
-
-@keyframes blob {
-  0% {
-    transform: translate(0px, 0px) scale(1);
-    border-radius: 40% 60% 70% 30% / 40% 50% 50% 60%;
-  }
-  33% {
-    transform: translate(40px, -60px) scale(1.1);
-    border-radius: 70% 30% 50% 50% / 30% 40% 60% 70%;
-  }
-  66% {
-    transform: translate(-20px, 30px) scale(0.9);
-    border-radius: 30% 70% 60% 40% / 50% 60% 40% 50%;
-  }
-  100% {
-    transform: translate(0px, 0px) scale(1);
-    border-radius: 40% 60% 70% 30% / 40% 50% 50% 60%;
-  }
-}
-
-/* Enhanced rainbow text */
-.rainbow-text {
-  background-image: linear-gradient(
-    to right, 
-    #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff
-  );
-  background-size: 200% 200%;
-  color: transparent;
-  background-clip: text;
-  -webkit-background-clip: text;
-  animation: rainbow-animation 6s linear infinite;
-}
-
-@keyframes rainbow-animation {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Modern futuristic dot grid background */
+/* Simple dot grid for backgrounds */
 .dot-grid {
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    rgba(139, 92, 246, 0.2) 1px,
-    transparent 0
-  );
+  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
   background-size: 20px 20px;
 }
 
 .dark .dot-grid {
-  background-image: radial-gradient(
-    circle at 1px 1px,
-    rgba(255, 255, 255, 0.1) 1px,
-    transparent 0
-  );
+  background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-/* Gen Z style checkmark animation */
+/* Simple checkmark animation */
 .checkmark {
   stroke-dasharray: 1000;
   stroke-dashoffset: 1000;
-  animation: dash 2s ease-in-out forwards;
+  animation: dash 1s ease-in-out forwards;
 }
 
 @keyframes dash {
   to {
     stroke-dashoffset: 0;
   }
+}
+
+/* Feature card */
+.feature-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.dark .feature-card {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .feature-card:hover {
+  border-color: hsl(var(--primary));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Section titles */
+.section-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.section-subtitle {
+  color: hsl(var(--muted-foreground));
+  font-size: 1.125rem;
+  max-width: 36rem;
 }

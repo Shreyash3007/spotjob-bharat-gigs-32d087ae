@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,24 +8,40 @@ import { ThemeProvider } from "@/hooks/use-theme";
 import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-
-// Pages
-import Index from "./pages/Index";
-import MapView from "./pages/MapView";
-import JobSwipe from "./pages/JobSwipe";
-import PostJob from "./pages/PostJob";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import JobDetails from "./pages/JobDetails";
 import { AppProvider } from "./context/AppContext";
-import Auth from "./pages/Auth";
-import LandingPage from "./pages/LandingPage";
+import ErrorBoundary from "./components/ErrorBoundary";
+
+// Implement lazy loading for route components
+const Index = lazy(() => import("./pages/Index"));
+const MapView = lazy(() => import("./pages/MapView"));
+const JobSwipe = lazy(() => import("./pages/JobSwipe"));
+const PostJob = lazy(() => import("./pages/PostJob"));
+const Profile = lazy(() => import("./pages/Profile"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const JobDetails = lazy(() => import("./pages/JobDetails"));
+const Auth = lazy(() => import("./pages/Auth"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  </div>
+);
 
 // Set Mapbox token globally
 import mapboxgl from 'mapbox-gl';
 mapboxgl.accessToken = 'pk.eyJ1Ijoic2hyZXlhc2gwNDUiLCJhIjoiY21hNGI5YXhzMDNwcTJqczYyMnR3OWdkcSJ9.aVpyfgys6f-h27ftG_63Zw';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 // Route protection component
 type ProtectedRouteProps = {
@@ -37,8 +53,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
 
   if (loading) {
-    // You could show a loading spinner here
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return <PageLoader />;
   }
 
   if (!user) {
@@ -102,63 +117,67 @@ const ThemeMetaColor = () => {
 const App = () => {
   return (
     <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="light" storageKey="spotjob-theme">
-          <ThemeMetaColor />
-          <AuthProvider>
-            <AppProvider>
-              <TooltipProvider>
-                <BrowserRouter>
-                  <Toaster />
-                  <Sonner expand={true} closeButton richColors />
-                  <AnimatePresence mode="wait">
-                    <Routes>
-                      {/* Public routes */}
-                      <Route path="/" element={<LandingPage />} />
-                      <Route path="/auth" element={<Auth />} />
-                      
-                      {/* Protected routes */}
-                      <Route path="/home" element={
-                        <ProtectedRoute>
-                          <Index />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/map" element={
-                        <ProtectedRoute>
-                          <MapView />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/swipe" element={
-                        <ProtectedRoute>
-                          <JobSwipe />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/post-job" element={
-                        <ProtectedRoute>
-                          <PostJob />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/profile" element={
-                        <ProtectedRoute>
-                          <Profile />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/job/:id" element={
-                        <ProtectedRoute>
-                          <JobDetails />
-                        </ProtectedRoute>
-                      } />
-                      
-                      {/* Fallback route */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </AnimatePresence>
-                </BrowserRouter>
-              </TooltipProvider>
-            </AppProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider defaultTheme="light" storageKey="spotjob-theme">
+            <ThemeMetaColor />
+            <AuthProvider>
+              <AppProvider>
+                <TooltipProvider>
+                  <BrowserRouter>
+                    <Toaster />
+                    <Sonner expand={true} closeButton richColors />
+                    <AnimatePresence mode="wait">
+                      <Suspense fallback={<PageLoader />}>
+                        <Routes>
+                          {/* Public routes */}
+                          <Route path="/" element={<LandingPage />} />
+                          <Route path="/auth" element={<Auth />} />
+                          
+                          {/* Protected routes */}
+                          <Route path="/home" element={
+                            <ProtectedRoute>
+                              <Index />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/map" element={
+                            <ProtectedRoute>
+                              <MapView />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/swipe" element={
+                            <ProtectedRoute>
+                              <JobSwipe />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/post-job" element={
+                            <ProtectedRoute>
+                              <PostJob />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/profile" element={
+                            <ProtectedRoute>
+                              <Profile />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/job/:id" element={
+                            <ProtectedRoute>
+                              <JobDetails />
+                            </ProtectedRoute>
+                          } />
+                          
+                          {/* Fallback route */}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
+                    </AnimatePresence>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </AppProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </React.StrictMode>
   );
 };
