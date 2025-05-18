@@ -1,555 +1,358 @@
-import { useState, useEffect } from "react";
-import { Navigate, useNavigate, useLocation } from "react-router-dom";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
-import { Mail, Lock, Loader2, Github } from "lucide-react";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger, 
-} from "@/components/ui/dialog";
+import { Eye, EyeOff } from "lucide-react";
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-});
-
-const signupSchema = loginSchema.extend({
-  confirmPassword: z.string(),
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-// Add a reset password schema
-const resetPasswordSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
-});
-
-type LoginFormValues = z.infer<typeof loginSchema>;
-type SignupFormValues = z.infer<typeof signupSchema>;
-type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
-
-export default function Auth() {
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
-  const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
+const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const loginForm = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const signupForm = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      confirmPassword: "",
-      name: "",
-    },
-  });
-
-  // Add reset password form
-  const resetPasswordForm = useForm<ResetPasswordFormValues>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-
-  const onLoginSubmit = async (data: LoginFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      const { error } = await signIn(data.email, data.password);
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast.success("Signed in successfully!");
-      navigate("/profile");
-    } catch (error: any) {
-      console.error("Login error:", error);
-      toast.error(error.message || "Failed to sign in");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const onSignupSubmit = async (data: SignupFormValues) => {
-    setIsSubmitting(true);
-    
-    try {
-      const { error: signupError } = await signUp(data.email, data.password, { 
-        name: data.name,
-      });
-      
-      if (signupError) {
-        throw signupError;
-      }
-      
-      // Don't automatically sign in, instead show email verification message
-      toast.success("Account created successfully!", {
-        description: "Please check your email to verify your account before signing in."
-      });
-      
-      // Reset form and switch to login tab
-      signupForm.reset();
-      setActiveTab("login");
-      
-      // Add verification status to pass to login form
-      sessionStorage.setItem('pendingVerification', data.email);
-      
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      toast.error(error.message || "Failed to create account");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const onResetPasswordSubmit = async (data: ResetPasswordFormValues) => {
-    setIsResettingPassword(true);
-    
-    try {
-      const { error } = await resetPassword(data.email);
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast.success("Password reset email sent!", {
-        description: "Please check your email for instructions to reset your password."
-      });
-      setResetPasswordDialogOpen(false);
-      resetPasswordForm.reset();
-    } catch (error: any) {
-      console.error("Password reset error:", error);
-      toast.error(error.message || "Failed to send password reset email");
-    } finally {
-      setIsResettingPassword(false);
-    }
-  };
-
-  // Add a state for pending verification
-  const [pendingVerification, setPendingVerification] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
+  const searchParams = new URLSearchParams(location.search);
+  const defaultTab = searchParams.get("mode") === "signup" ? "signup" : "login";
   
-  // Check for pending verification on mount or from location state
-  useEffect(() => {
-    // Check localStorage
-    const email = sessionStorage.getItem('pendingVerification');
-    if (email) {
-      setPendingVerification(email);
-    }
-    
-    // Check location state for verification required message from protected routes
-    const state = location.state as { verificationRequired?: boolean; email?: string };
-    if (state?.verificationRequired && state?.email) {
-      setPendingVerification(state.email);
-      setActiveTab("login");
-    }
-  }, [location]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  // Close the verification notice
-  const closeVerificationNotice = () => {
-    setPendingVerification(null);
-    sessionStorage.removeItem('pendingVerification');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/home");
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name,
+            phone
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data.user) {
+        toast.success("Account created! You can now log in.");
+        navigate("/home");
+      }
+    } catch (error: any) {
+      setError(error.message || "Failed to sign up");
+      toast.error(error.message || "Failed to sign up");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // If already logged in, redirect to profile
-  if (user) {
-    return <Navigate to="/profile" />;
-  }
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+
+      if (error) throw error;
+      
+      if (data.user) {
+        toast.success("Logged in successfully!");
+        navigate("/home");
+      }
+    } catch (error: any) {
+      setError(error.message || "Failed to log in");
+      toast.error(error.message || "Failed to log in");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-gradient-to-b from-background to-background/80">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="mx-auto w-full max-w-md"
-      >
-        <Card className="border bg-card/90 backdrop-blur-sm shadow-xl">
-          <CardHeader className="space-y-1">
-            <div className="flex justify-center mb-4">
-              <img 
-                src="/favicon.ico" 
-                alt="SpotJob Logo" 
-                className="h-10 w-10" 
-              />
+    <div className="flex min-h-screen bg-accent/10">
+      {/* Left side - marketing content */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary/90 to-primary/70 text-white relative p-12">
+        <div className="max-w-md">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold mb-4">Find Local Jobs. Get Hired Fast.</h1>
+              <p className="text-lg opacity-90">
+                Spotjob connects you with flexible work opportunities in your area. Sign up now to start earning!
+              </p>
             </div>
-            <CardTitle className="text-2xl font-bold text-center">
-              Welcome to SpotJob
-            </CardTitle>
-            <CardDescription className="text-center">
-              {activeTab === "login" 
-                ? "Sign in to access your account" 
-                : "Create an account to get started"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="pt-2">
-            <Tabs 
-              value={activeTab} 
-              onValueChange={(v) => setActiveTab(v as "login" | "signup")} 
-              className="w-full"
-            >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+
+            <div className="space-y-8">
+              <div className="flex items-start space-x-4">
+                <div className="bg-white/20 rounded-full p-2 mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Find Work That Fits Your Schedule</h3>
+                  <p className="opacity-90">Browse jobs based on your skills and availability</p>
+                </div>
+              </div>
               
-              <AnimatePresence mode="wait">
-                <TabsContent value="login" className="mt-4">
-                  <motion.div
-                    key="login"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {pendingVerification && (
-                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                        <div className="flex">
-                          <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-                            </svg>
-                          </div>
-                          <div className="ml-3 flex-1 md:flex md:justify-between">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
-                              Verification email sent to <span className="font-medium">{pendingVerification}</span>. Please check your inbox and verify your email before signing in.
-                            </p>
-                            <button 
-                              className="ml-3 text-blue-700 dark:text-blue-300 hover:underline text-sm flex-shrink-0"
-                              onClick={closeVerificationNotice}
-                            >
-                              Dismiss
-                            </button>
-                          </div>
-                        </div>
+              <div className="flex items-start space-x-4">
+                <div className="bg-white/20 rounded-full p-2 mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2v6a2 2 0 0 0 2 2h6"></path>
+                    <path d="M5.41 5.41L5 5c-1.1 1.1-1 3.12.412 4.533L9 13.121l5.247 5.248 4.329-4.329-5.248-5.247-3.588-3.588C8.42 4 6.4 3.9 5.3 5l.11.41"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Chat Directly with Employers</h3>
+                  <p className="opacity-90">No middlemen, deal directly with job posters</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start space-x-4">
+                <div className="bg-white/20 rounded-full p-2 mt-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Get Paid Quickly</h3>
+                  <p className="opacity-90">Secure payment options right in the app</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="absolute bottom-8 left-12">
+            <p className="text-sm opacity-70">© 2025 Spotjob. All rights reserved.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Right side - auth form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md"
+        >
+          <div className="flex justify-center mb-6 lg:hidden">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary to-blue-600 flex items-center justify-center text-white font-bold text-xl">S</div>
+              <span className="ml-2 text-2xl font-bold">SpotJob</span>
+            </div>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl text-center">
+                Welcome to SpotJob
+              </CardTitle>
+              <CardDescription className="text-center">
+                Sign in to your account or create a new one to get started
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue={defaultTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="login">
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="login-email" className="block text-sm font-medium">
+                        Email
+                      </label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="login-password" className="block text-sm font-medium">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <Input
+                          id="login-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {error && (
+                      <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md">
+                        {error}
                       </div>
                     )}
-                    <Form {...loginForm}>
-                      <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                        <FormField
-                          control={loginForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input 
-                                    placeholder="you@example.com" 
-                                    type="email"
-                                    className="pl-9"
-                                    {...field} 
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={loginForm.control}
-                          name="password"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Password</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input 
-                                    placeholder="••••••••" 
-                                    type="password"
-                                    className="pl-9"
-                                    {...field} 
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="flex justify-end">
-                          <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
-                            <DialogTrigger asChild>
-                              <Button variant="link" className="px-0 text-sm text-primary" type="button">
-                                Forgot Password?
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-[425px]">
-                              <DialogHeader>
-                                <DialogTitle>Reset Password</DialogTitle>
-                                <DialogDescription>
-                                  Enter your email address and we'll send you a link to reset your password.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <Form {...resetPasswordForm}>
-                                <form onSubmit={resetPasswordForm.handleSubmit(onResetPasswordSubmit)} className="space-y-4">
-                                  <FormField
-                                    control={resetPasswordForm.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                      <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                          <div className="relative">
-                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            <Input 
-                                              placeholder="you@example.com" 
-                                              type="email"
-                                              className="pl-9"
-                                              {...field} 
-                                            />
-                                          </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                      </FormItem>
-                                    )}
-                                  />
-                                  <DialogFooter>
-                                    <Button 
-                                      type="submit" 
-                                      className="w-full" 
-                                      disabled={isResettingPassword}
-                                    >
-                                      {isResettingPassword ? (
-                                        <>
-                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                          Sending email...
-                                        </>
-                                      ) : (
-                                        "Send Reset Link"
-                                      )}
-                                    </Button>
-                                  </DialogFooter>
-                                </form>
-                              </Form>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                        <Button 
-                          type="submit" 
-                          className="w-full" 
-                          disabled={isSubmitting}
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Signing in...
-                            </>
-                          ) : (
-                            "Sign In"
-                          )}
-                        </Button>
-                      </form>
-                    </Form>
-                  </motion.div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center">
+                          <span className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Logging in...
+                        </span>
+                      ) : (
+                        "Log In"
+                      )}
+                    </Button>
+                  </form>
                 </TabsContent>
                 
-                <TabsContent value="signup" className="mt-4">
-                  <motion.div
-                    key="signup"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Form {...signupForm}>
-                      <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
-                        <FormField
-                          control={signupForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="John Doe" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <label htmlFor="signup-name" className="block text-sm font-medium">
+                        Full Name
+                      </label>
+                      <Input
+                        id="signup-name"
+                        placeholder="John Doe"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="signup-email" className="block text-sm font-medium">
+                        Email
+                      </label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="signup-phone" className="block text-sm font-medium">
+                        Phone Number (optional)
+                      </label>
+                      <Input
+                        id="signup-phone"
+                        placeholder="+91 98765 43210"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label htmlFor="signup-password" className="block text-sm font-medium">
+                        Password
+                      </label>
+                      <div className="relative">
+                        <Input
+                          id="signup-password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
                         />
-                        <FormField
-                          control={signupForm.control}
-                          name="email"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Email</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                  <Input 
-                                    placeholder="you@example.com" 
-                                    type="email"
-                                    className="pl-9"
-                                    {...field} 
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                          <FormField
-                            control={signupForm.control}
-                            name="password"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Password</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="••••••••" type="password" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={signupForm.control}
-                            name="confirmPassword"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Confirm Password</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="••••••••" type="password" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <Button 
-                          type="submit" 
-                          className="w-full"
-                          disabled={isSubmitting}
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                          onClick={() => setShowPassword(!showPassword)}
                         >
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Creating account...
-                            </>
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
                           ) : (
-                            "Create Account"
+                            <Eye className="h-4 w-4" />
                           )}
-                        </Button>
-                      </form>
-                    </Form>
-                  </motion.div>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {error && (
+                      <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-md">
+                        {error}
+                      </div>
+                    )}
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center">
+                          <span className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                          Creating account...
+                        </span>
+                      ) : (
+                        "Create Account"
+                      )}
+                    </Button>
+                  </form>
                 </TabsContent>
-              </AnimatePresence>
-              
-              <div className="relative mt-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-              
-              <div className="mt-6 grid gap-3">
-                <Button 
-                  variant="outline" 
-                  type="button"
-                  className="bg-white text-black hover:bg-gray-50 border border-gray-300 dark:bg-white dark:text-gray-800"
-                  onClick={signInWithGoogle}
-                >
-                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                    <path
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      fill="#4285F4"
-                    />
-                    <path
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      fill="#34A853"
-                    />
-                    <path
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                      fill="#FBBC05"
-                    />
-                    <path
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                      fill="#EA4335"
-                    />
-                  </svg>
-                  Google
-                </Button>
-                
-                <Button 
-                  variant="outline"
-                  type="button"
-                  className="bg-[#24292F] text-white hover:bg-[#24292F]/90 dark:bg-[#24292F] dark:hover:bg-[#24292F]/80"
-                >
-                  <Github className="mr-2 h-4 w-4" /> GitHub
-                </Button>
-              </div>
-            </Tabs>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
-            <div className="text-center text-sm text-muted-foreground">
-              By clicking continue, you agree to our{" "}
-              <a
-                href="#"
-                className="underline underline-offset-4 hover:text-primary"
-              >
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a
-                href="#"
-                className="underline underline-offset-4 hover:text-primary"
-              >
-                Privacy Policy
-              </a>
-              .
-            </div>
-          </CardFooter>
-        </Card>
-      </motion.div>
+              </Tabs>
+            </CardContent>
+          </Card>
+          
+          <div className="mt-6 text-center text-sm text-gray-600 lg:hidden">
+            © 2025 Spotjob. All rights reserved.
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
-}
+};
+
+export default Auth;

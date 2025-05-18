@@ -1,542 +1,259 @@
-import { useState, useEffect } from "react";
-import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabase";
-import { useApp } from "@/context/AppContext";
-import { useToast } from "@/components/ui/use-toast";
-import { 
-  AlertOctagon, 
-  Shield, 
-  Users, 
-  CheckCircle, 
-  XCircle, 
-  Eye, 
-  FileText, 
-  User,
-  MessageSquare,
-  Flag
-} from "lucide-react";
-import { format } from "date-fns";
-import { ReportType, ReportReason } from "@/lib/reports";
 
-const AdminDashboard = () => {
-  const [reports, setReports] = useState<any[]>([]);
-  const [pendingReports, setPendingReports] = useState<any[]>([]);
-  const [userCount, setUserCount] = useState(0);
-  const [jobCount, setJobCount] = useState(0);
-  const [activeCount, setActiveCount] = useState(0);
-  const [selectedReport, setSelectedReport] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const { user } = useApp();
-  const { toast } = useToast();
-  
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch reports
-        const { data: reportsData, error: reportsError } = await supabase
-          .from('reports')
-          .select(`
-            *,
-            reporter:reporter_id(id, name, avatar),
-            target_job:target_id(id, title, description, category)
-          `)
-          .order('created_at', { ascending: false });
-          
-        if (reportsError) throw reportsError;
-        
-        // Fetch user count
-        const { count: userCountData, error: userCountError } = await supabase
-          .from('users')
-          .select('*', { count: 'exact', head: true });
-          
-        if (userCountError) throw userCountError;
-        
-        // Fetch job count
-        const { count: jobCountData, error: jobCountError } = await supabase
-          .from('jobs')
-          .select('*', { count: 'exact', head: true });
-          
-        if (jobCountError) throw jobCountError;
-        
-        // Fetch active job count
-        const { count: activeCountData, error: activeCountError } = await supabase
-          .from('jobs')
-          .select('*', { count: 'exact', head: true })
-          .eq('status', 'open');
-          
-        if (activeCountError) throw activeCountError;
-        
-        setReports(reportsData || []);
-        setPendingReports((reportsData || []).filter(report => report.status === 'pending'));
-        setUserCount(userCountData || 0);
-        setJobCount(jobCountData || 0);
-        setActiveCount(activeCountData || 0);
-      } catch (error) {
-        console.error('Error fetching admin data:', error);
-        toast({
-          title: "Error loading dashboard data",
-          description: "There was a problem loading the admin dashboard data.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+import React, { useState } from "react";
+import Layout from "@/components/Layout";
+import { useAdmin } from "@/context/AdminContext";
+import { useAuth } from "@/context/AuthContext";
+import { Navigate } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { motion } from "framer-motion";
+import { BarChart, Activity, Settings, Users, AlertTriangle, CheckCircle, Info, ShieldCheck } from "lucide-react";
+
+const AdminDashboard: React.FC = () => {
+  const { user } = useAuth();
+  const { isAdmin, loading, appSettings, toggleMaintenanceMode, toggleFeature, updateSetting } = useAdmin();
+  const [maintenanceMessage, setMaintenanceMessage] = useState<string>(
+    appSettings?.maintenance_mode.message || "We are currently performing maintenance. Please check back shortly."
+  );
+
+  // Update maintenance message when appSettings changes
+  React.useEffect(() => {
+    if (appSettings?.maintenance_mode.message) {
+      setMaintenanceMessage(appSettings.maintenance_mode.message);
+    }
+  }, [appSettings]);
+
+  // Save maintenance message
+  const saveMaintenanceMessage = async () => {
+    if (!appSettings) return;
     
-    fetchDashboardData();
-    
-    // Set up realtime subscription for reports
-    const reportsSubscription = supabase
-      .channel('admin-reports')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'reports' 
-      }, fetchDashboardData)
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(reportsSubscription);
-    };
-  }, [toast]);
-  
-  const handleApproveReport = async (reportId: string) => {
-    try {
-      // Update report status
-      const { error } = await supabase
-        .from('reports')
-        .update({ status: 'approved' })
-        .eq('id', reportId);
-        
-      if (error) throw error;
-      
-      // This will trigger the realtime subscription
-      
-      toast({
-        title: "Report approved",
-        description: "The report has been marked as approved",
-      });
-    } catch (error) {
-      console.error('Error approving report:', error);
-      toast({
-        title: "Error approving report",
-        description: "There was a problem approving the report",
-        variant: "destructive"
-      });
-    }
+    await updateSetting('maintenance_mode', {
+      ...appSettings.maintenance_mode,
+      message: maintenanceMessage
+    });
   };
-  
-  const handleRejectReport = async (reportId: string) => {
-    try {
-      // Update report status
-      const { error } = await supabase
-        .from('reports')
-        .update({ status: 'rejected' })
-        .eq('id', reportId);
-        
-      if (error) throw error;
-      
-      // This will trigger the realtime subscription
-      
-      toast({
-        title: "Report rejected",
-        description: "The report has been marked as rejected",
-      });
-    } catch (error) {
-      console.error('Error rejecting report:', error);
-      toast({
-        title: "Error rejecting report",
-        description: "There was a problem rejecting the report",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const getReasonBadgeColor = (reason: ReportReason) => {
-    switch (reason) {
-      case ReportReason.SPAM:
-        return "bg-yellow-100 text-yellow-800";
-      case ReportReason.FRAUD:
-        return "bg-red-100 text-red-800";
-      case ReportReason.INAPPROPRIATE:
-        return "bg-purple-100 text-purple-800";
-      case ReportReason.MISLEADING:
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-  
-  const getReportTypeIcon = (type: ReportType) => {
-    return type === ReportType.JOB ? <FileText className="h-4 w-4" /> : <User className="h-4 w-4" />;
-  };
-  
-  if (!user?.isAdmin) {
+
+  // If not logged in, redirect to login
+  if (!user) {
+    return <Navigate to="/auth" />;
+  }
+
+  // If loading, show loading state
+  if (loading) {
     return (
       <Layout>
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="bg-destructive/10 p-3 rounded-full mb-4">
-            <Shield className="h-8 w-8 text-destructive" />
+        <div className="flex items-center justify-center h-[70vh]">
+          <div className="text-center">
+            <div className="animate-spin w-16 h-16 border-4 border-primary border-t-transparent rounded-full mb-4 mx-auto"></div>
+            <p className="text-lg font-medium">Checking admin privileges...</p>
           </div>
-          <h1 className="text-xl font-semibold mb-2">Access Denied</h1>
-          <p className="text-muted-foreground text-center max-w-sm">
-            You don't have permission to access the admin dashboard.
-          </p>
         </div>
       </Layout>
     );
   }
-  
+
+  // If not admin, show unauthorized
+  if (!isAdmin) {
+    return (
+      <Layout>
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-300">
+                <ShieldCheck className="h-6 w-6" />
+                Unauthorized Access
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700 dark:text-red-300">
+                You don't have permission to access the admin dashboard. Please contact an administrator if you believe this is an error.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            Admin Dashboard
-          </h1>
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            Refresh Data
-          </Button>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Users</p>
-                  <p className="text-3xl font-bold">{userCount}</p>
-                </div>
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Jobs</p>
-                  <p className="text-3xl font-bold">{jobCount}</p>
-                </div>
-                <div className="bg-primary/10 p-3 rounded-full">
-                  <FileText className="h-6 w-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Jobs</p>
-                  <p className="text-3xl font-bold">{activeCount}</p>
-                </div>
-                <div className="bg-green-100 p-3 rounded-full">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Pending Reports</p>
-                  <p className="text-3xl font-bold">{pendingReports.length}</p>
-                </div>
-                <div className="bg-amber-100 p-3 rounded-full">
-                  <Flag className="h-6 w-6 text-amber-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Tabs defaultValue="pending">
-          <div className="flex items-center justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="pending" className="flex items-center gap-1">
-                <AlertOctagon className="h-4 w-4" />
-                Pending ({pendingReports.length})
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+              <p className="text-muted-foreground">Manage app settings and monitor performance</p>
+            </div>
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+              v{appSettings?.app_info.version || '1.0.0'}
+            </Badge>
+          </div>
+
+          <Tabs defaultValue="app-settings">
+            <TabsList className="mb-6">
+              <TabsTrigger value="app-settings" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                App Settings
               </TabsTrigger>
-              <TabsTrigger value="all" className="flex items-center gap-1">
-                <MessageSquare className="h-4 w-4" />
-                All Reports ({reports.length})
+              <TabsTrigger value="user-management" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                User Management
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="system-status" className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                System Status
               </TabsTrigger>
             </TabsList>
-          </div>
-          
-          <TabsContent value="pending" className="mt-0">
-            <Card>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-lg">Pending Reports</CardTitle>
-                <CardDescription>Reports that need review and action</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">Loading reports...</div>
-                ) : pendingReports.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No pending reports to review. Great job!
-                  </div>
-                ) : (
-                  <div className="relative overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Reason</TableHead>
-                          <TableHead>Reporter</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {pendingReports.map((report) => (
-                          <TableRow key={report.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-1">
-                                {getReportTypeIcon(report.target_type)}
-                                <span>
-                                  {report.target_type === ReportType.JOB ? 'Job' : 'User'}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getReasonBadgeColor(report.reason)}>
-                                {report.reason}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {report.reporter?.name || 'Anonymous'}
-                            </TableCell>
-                            <TableCell>
-                              {format(new Date(report.created_at), 'MMM dd, yyyy')}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => setSelectedReport(report)}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="text-red-600 hover:bg-red-50"
-                                  onClick={() => handleRejectReport(report.id)}
-                                >
-                                  <XCircle className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  className="text-green-600 hover:bg-green-50"
-                                  onClick={() => handleApproveReport(report.id)}
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="all" className="mt-0">
-            <Card>
-              <CardHeader className="pb-1">
-                <CardTitle className="text-lg">All Reports</CardTitle>
-                <CardDescription>Complete history of all reports</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8">Loading reports...</div>
-                ) : reports.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No reports in the system.
-                  </div>
-                ) : (
-                  <div className="relative overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Reason</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {reports.map((report) => (
-                          <TableRow key={report.id}>
-                            <TableCell className="font-medium">
-                              <div className="flex items-center gap-1">
-                                {getReportTypeIcon(report.target_type)}
-                                <span>
-                                  {report.target_type === ReportType.JOB ? 'Job' : 'User'}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getReasonBadgeColor(report.reason)}>
-                                {report.reason}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={
-                                report.status === 'approved' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : report.status === 'rejected'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }>
-                                {report.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {format(new Date(report.created_at), 'MMM dd, yyyy')}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => setSelectedReport(report)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-        
-        {selectedReport && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Report Details</CardTitle>
-              <CardDescription>
-                Report #{selectedReport.id.slice(0, 8)} - Submitted on {format(new Date(selectedReport.created_at), 'MMM dd, yyyy')}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Report Type</h3>
-                <p className="flex items-center gap-1">
-                  {getReportTypeIcon(selectedReport.target_type)}
-                  <span>{selectedReport.target_type === ReportType.JOB ? 'Job Report' : 'User Report'}</span>
-                </p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Reason</h3>
-                <Badge className={getReasonBadgeColor(selectedReport.reason)}>
-                  {selectedReport.reason}
-                </Badge>
-              </div>
-              
-              {selectedReport.details && (
-                <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Additional Details</h3>
-                  <div className="bg-muted p-3 rounded-md text-sm">
-                    {selectedReport.details}
-                  </div>
-                </div>
-              )}
-              
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-1">Reported Content</h3>
-                <div className="bg-muted p-3 rounded-md">
-                  {selectedReport.target_type === ReportType.JOB && selectedReport.target_job ? (
-                    <div>
-                      <p className="font-medium">{selectedReport.target_job.title}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{selectedReport.target_job.description}</p>
+
+            <TabsContent value="app-settings">
+              <div className="grid gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                      Maintenance Mode
+                    </CardTitle>
+                    <CardDescription>
+                      When enabled, users will see a maintenance message instead of the app
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">Maintenance Mode</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {appSettings?.maintenance_mode.enabled ? 'Currently active' : 'Currently inactive'}
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={appSettings?.maintenance_mode.enabled || false} 
+                        onCheckedChange={toggleMaintenanceMode}
+                      />
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">User profile information</p>
-                  )}
-                </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="maintenance-message">Maintenance Message</Label>
+                      <Textarea 
+                        id="maintenance-message"
+                        value={maintenanceMessage} 
+                        onChange={(e) => setMaintenanceMessage(e.target.value)}
+                        placeholder="Enter the message users will see during maintenance"
+                        className="min-h-32"
+                      />
+                    </div>
+                  </CardContent>
+                  <CardFooter className="justify-end">
+                    <Button onClick={saveMaintenanceMessage}>Save Message</Button>
+                  </CardFooter>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="h-5 w-5 text-blue-500" />
+                      Feature Toggles
+                    </CardTitle>
+                    <CardDescription>
+                      Enable or disable specific features in the app
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">Demo Jobs</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Show sample job listings when real data is limited
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={appSettings?.features.fake_jobs_enabled || false} 
+                        onCheckedChange={() => toggleFeature('fake_jobs_enabled')}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">Demo Profiles</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Show sample user profiles when real data is limited
+                        </p>
+                      </div>
+                      <Switch 
+                        checked={appSettings?.features.fake_profiles_enabled || false}
+                        onCheckedChange={() => toggleFeature('fake_profiles_enabled')} 
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              
-              <div className="flex justify-end gap-2 pt-4">
-                {selectedReport.status === 'pending' && (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      className="text-red-600 hover:bg-red-50"
-                      onClick={() => handleRejectReport(selectedReport.id)}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject Report
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      className="text-green-600 hover:bg-green-50"
-                      onClick={() => handleApproveReport(selectedReport.id)}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Approve Report
-                    </Button>
-                  </>
-                )}
-                <Button 
-                  variant="default"
-                  onClick={() => setSelectedReport(null)}
-                >
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            </TabsContent>
+
+            <TabsContent value="user-management">
+              <Card>
+                <CardHeader>
+                  <CardTitle>User Management</CardTitle>
+                  <CardDescription>
+                    Manage users and roles (to be implemented)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    This section will be implemented in a future update.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Analytics Dashboard</CardTitle>
+                  <CardDescription>
+                    View app analytics and insights (to be implemented)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    This section will be implemented in a future update.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="system-status">
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Status</CardTitle>
+                  <CardDescription>
+                    View system health and performance metrics (to be implemented)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    This section will be implemented in a future update.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </motion.div>
       </div>
     </Layout>
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;
