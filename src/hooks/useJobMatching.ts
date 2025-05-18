@@ -9,7 +9,7 @@ interface MatchScores {
   userPreference: number;
 }
 
-const useJobMatching = (currentUser?: User | null) => {
+export const useJobMatching = (currentUser?: User | null) => {
   const [userPreferences, setUserPreferences] = useState({
     preferredCategories: ['delivery', 'tech'],
     preferredPay: { min: 300, max: 1500 },
@@ -166,4 +166,5 @@ const useJobMatching = (currentUser?: User | null) => {
   };
 };
 
+// Keep the default export for backward compatibility
 export default useJobMatching;

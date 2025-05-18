@@ -294,8 +294,8 @@ const LandingPage: React.FC = () => {
                     <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex justify-between">
                         <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Join our community</p>
-                          <p className="font-medium text-gray-900 dark:text-white">10,000+ users trust SpotJob</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Join our growing community</p>
+                          <p className="font-medium text-gray-900 dark:text-white">Connect with local employers today</p>
                         </div>
                         <div className="flex -space-x-2">
                           <div className="w-8 h-8 rounded-full bg-blue-500 border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-xs font-bold">J</div>
@@ -317,7 +317,7 @@ const LandingPage: React.FC = () => {
                   transition={{ delay: 0.7, duration: 0.5 }}
                 >
                   <Users className="h-5 w-5" strokeWidth={1.5} />
-                  <p className="text-xs font-medium mt-1">2,000+ Users</p>
+                  <p className="text-xs font-medium mt-1">Fast Matching</p>
                 </motion.div>
                 
                 <motion.div 
@@ -327,7 +327,7 @@ const LandingPage: React.FC = () => {
                   transition={{ delay: 0.9, duration: 0.5 }}
                 >
                   <Star className="h-5 w-5" strokeWidth={1.5} />
-                  <p className="text-xs font-medium mt-1">Top Rated</p>
+                  <p className="text-xs font-medium mt-1">Quality Jobs</p>
                 </motion.div>
               </div>
             </motion.div>
@@ -346,8 +346,8 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">500+</span>
-              <span className="text-sm text-muted-foreground">Daily Jobs Posted</span>
+              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">100%</span>
+              <span className="text-sm text-muted-foreground">Secure Platforms</span>
             </motion.div>
             
             <motion.div 
@@ -357,8 +357,8 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.1, duration: 0.5 }}
             >
-              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">10k+</span>
-              <span className="text-sm text-muted-foreground">Verified Users</span>
+              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">24/7</span>
+              <span className="text-sm text-muted-foreground">Support Available</span>
             </motion.div>
             
             <motion.div 
@@ -368,8 +368,8 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.2, duration: 0.5 }}
             >
-              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">₹5M+</span>
-              <span className="text-sm text-muted-foreground">Paid to Workers</span>
+              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">₹15-20k</span>
+              <span className="text-sm text-muted-foreground">Avg. Monthly Potential</span>
             </motion.div>
             
             <motion.div 
@@ -379,8 +379,8 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.3, duration: 0.5 }}
             >
-              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">4.8/5</span>
-              <span className="text-sm text-muted-foreground">User Rating</span>
+              <span className="text-3xl sm:text-4xl font-bold text-primary mb-2">48h</span>
+              <span className="text-sm text-muted-foreground">Fast Hiring Process</span>
             </motion.div>
           </div>
         </div>

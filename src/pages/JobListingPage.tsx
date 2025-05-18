@@ -160,18 +160,24 @@ const JobListingPage: React.FC = () => {
   const [selectedJob, setSelectedJob] = useState<JobPost | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [jobs, setJobs] = useState<JobPost[]>(mockJobs);
 
   // Get user's geolocation
   const { coordinates, error: geoError } = useGeolocation();
 
-  // Use job matching hook
-  const { matchedJobs, recordInteraction } = useJobMatching(mockJobs, currentUser, {
-    userLocation: coordinates,
-    maxDistance: radius,
-    prioritizeLocation: sortBy === "distance",
-    prioritizePay: sortBy === "pay",
-    prioritizeSkills: sortBy === "skills",
-  });
+  // Use job matching hook with the current user
+  const { getRecommendedJobs, trainModelOnInteraction } = useJobMatching(currentUser);
+
+  // Get recommended jobs
+  const matchedJobs = getRecommendedJobs(jobs);
+
+  // Record interaction (view, apply, etc)
+  const recordInteraction = (jobId: string, interactionType: 'apply' | 'view' | 'skip') => {
+    const job = jobs.find(j => j.id === jobId);
+    if (job) {
+      trainModelOnInteraction(job, interactionType);
+    }
+  };
 
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
