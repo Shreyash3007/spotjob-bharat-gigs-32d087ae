@@ -8,8 +8,10 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import { AdminProvider } from "./context/AdminContext";
 import { AuthProvider } from "./context/AuthContext";
+import { AppProvider } from "./context/AppContext";
 import MaintenanceMode from "./components/MaintenanceMode";
 import ProtectedRoute from "./components/ProtectedRoute";
+import NetworkStatusBanner from "./components/NetworkStatusBanner";
 
 // Lazy-loaded pages for better performance
 const Auth = lazy(() => import("./pages/Auth"));
@@ -34,61 +36,64 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AdminProvider>
-          <MaintenanceMode />
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Protected routes that require authentication */}
-              <Route path="/jobs" element={
-                <ProtectedRoute>
-                  <JobListingPage />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/swipe" element={
-                <ProtectedRoute>
-                  <JobSwipe />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/job/:id" element={<JobDetails />} />
-              
-              <Route path="/home" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/map" element={<MapView />} />
-              
-              <Route path="/post-job" element={
-                <ProtectedRoute>
-                  <PostJob />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              
-              {/* Admin route that requires admin privileges */}
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin={true} redirectTo="/home">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <Toaster />
-          <SonnerToaster position="top-center" closeButton expand={false} richColors theme="system" />
-        </AdminProvider>
+        <AppProvider>
+          <AdminProvider>
+            <NetworkStatusBanner />
+            <MaintenanceMode />
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/auth" element={<Auth />} />
+                
+                {/* Protected routes that require authentication */}
+                <Route path="/jobs" element={
+                  <ProtectedRoute>
+                    <JobListingPage />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/swipe" element={
+                  <ProtectedRoute>
+                    <JobSwipe />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/job/:id" element={<JobDetails />} />
+                
+                <Route path="/home" element={
+                  <ProtectedRoute>
+                    <Index />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/map" element={<MapView />} />
+                
+                <Route path="/post-job" element={
+                  <ProtectedRoute>
+                    <PostJob />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Admin route that requires admin privileges */}
+                <Route path="/admin" element={
+                  <ProtectedRoute requireAdmin={true} redirectTo="/home">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
+            <Toaster />
+            <SonnerToaster position="top-center" closeButton expand={false} richColors theme="system" />
+          </AdminProvider>
+        </AppProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

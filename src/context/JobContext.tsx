@@ -2,8 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { JobPost, JobFilter } from "../types";
 import { mockJobs } from "../data/mockData";
-import { useAuth } from "./AuthContext";
-import { mockSupabase } from "@/integrations/supabase/client"; // Use mockSupabase for now
+import { useAuth } from "@/hooks/useAuth";
+import { mockSupabase } from "@/integrations/supabase/mockClient";
 import { toast } from "sonner";
 
 interface JobContextType {
@@ -68,30 +68,23 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     
     try {
-      // Using mockSupabase for now until DB types are updated
-      // In a real implementation, we would fetch from actual tables
-      
-      // Mock applied jobs
+      // Mock applied jobs for development
       const mockApplications = [
         { job_id: mockJobs[0].id },
         { job_id: mockJobs[2].id }
       ];
       
-      if (mockApplications) {
-        const appliedJobIds = new Set(mockApplications.map(app => app.job_id));
-        setAppliedJobs(appliedJobIds);
-      }
+      const appliedJobIds = new Set(mockApplications.map(app => app.job_id));
+      setAppliedJobs(appliedJobIds);
       
-      // Mock saved jobs
+      // Mock saved jobs for development
       const mockSaved = [
         { job_id: mockJobs[1].id },
         { job_id: mockJobs[3].id }
       ];
       
-      if (mockSaved) {
-        const savedJobIds = new Set(mockSaved.map(item => item.job_id));
-        setSavedJobs(savedJobIds);
-      }
+      const savedJobIds = new Set(mockSaved.map(item => item.job_id));
+      setSavedJobs(savedJobIds);
     } catch (error) {
       console.error("Error fetching job interactions:", error);
     }
@@ -110,7 +103,8 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (jobFilters.payMin !== undefined) {
       filtered = filtered.filter(job => {
         const payAmount = typeof job.pay === 'number' ? job.pay : 
-                         (job.pay && typeof job.pay === 'object' && 'amount' in job.pay) ? job.pay.amount : 0;
+                        (job.pay && typeof job.pay === 'object' && 'amount' in job.pay) ? 
+                        (job.pay as any).amount : 0;
         return payAmount >= (jobFilters.payMin || 0);
       });
     }
@@ -118,7 +112,8 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (jobFilters.payMax !== undefined) {
       filtered = filtered.filter(job => {
         const payAmount = typeof job.pay === 'number' ? job.pay : 
-                         (job.pay && typeof job.pay === 'object' && 'amount' in job.pay) ? job.pay.amount : 0;
+                        (job.pay && typeof job.pay === 'object' && 'amount' in job.pay) ? 
+                        (job.pay as any).amount : 0;
         return payAmount <= (jobFilters.payMax || Infinity);
       });
     }
@@ -136,17 +131,21 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (jobFilters.sortBy === 'pay_high_to_low') {
       filtered.sort((a, b) => {
         const payA = typeof a.pay === 'number' ? a.pay : 
-                     (a.pay && typeof a.pay === 'object' && 'amount' in a.pay) ? a.pay.amount : 0;
+                    (a.pay && typeof a.pay === 'object' && 'amount' in a.pay) ? 
+                    (a.pay as any).amount : 0;
         const payB = typeof b.pay === 'number' ? b.pay : 
-                     (b.pay && typeof b.pay === 'object' && 'amount' in b.pay) ? b.pay.amount : 0;
+                    (b.pay && typeof b.pay === 'object' && 'amount' in b.pay) ? 
+                    (b.pay as any).amount : 0;
         return (payB) - (payA);
       });
     } else if (jobFilters.sortBy === 'pay_low_to_high') {
       filtered.sort((a, b) => {
         const payA = typeof a.pay === 'number' ? a.pay : 
-                     (a.pay && typeof a.pay === 'object' && 'amount' in a.pay) ? a.pay.amount : 0;
+                    (a.pay && typeof a.pay === 'object' && 'amount' in a.pay) ? 
+                    (a.pay as any).amount : 0;
         const payB = typeof b.pay === 'number' ? b.pay : 
-                     (b.pay && typeof b.pay === 'object' && 'amount' in b.pay) ? b.pay.amount : 0;
+                    (b.pay && typeof b.pay === 'object' && 'amount' in b.pay) ? 
+                    (b.pay as any).amount : 0;
         return (payA) - (payB);
       });
     }
@@ -165,18 +164,13 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         status: "open"
       };
       
-      // Using mockSupabase for now
-      const response = await mockSupabase
-        .from('jobs')
-        .insert([jobData])
-        .select('id');
-        
-      const data = { id: `mock-${Date.now()}` };
+      // Generate a mock ID for development
+      const mockId = `mock-${Date.now()}`;
       
       // Add to local state
       const jobToAdd: JobPost = {
         ...newJob,
-        id: data.id,
+        id: mockId,
         postedDate: new Date().toISOString(),
         postedBy: {
           id: user.id,
@@ -188,7 +182,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setJobs(prevJobs => [jobToAdd, ...prevJobs]);
       toast.success("Job posted successfully");
       
-      return { success: true, jobId: data.id };
+      return { success: true, jobId: mockId };
     } catch (error) {
       console.error("Error posting job:", error);
       toast.error("Failed to post job");
@@ -205,18 +199,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return { success: false, error: "You have already applied to this job" };
       }
       
-      const application = {
-        job_id: jobId,
-        applicant_id: user.id,
-        status: "pending",
-        applied_at: new Date().toISOString()
-      };
-      
-      // Using mockSupabase for now
-      await mockSupabase
-        .from('job_applications')
-        .insert([application]);
-        
+      // Mock successful application for development
       // Update local state
       setAppliedJobs(prev => new Set([...prev, jobId]));
       toast.success("Application submitted successfully");
@@ -236,14 +219,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const isSaved = savedJobs.has(jobId);
       
       if (isSaved) {
-        // Unsave job using mockSupabase for now
-        await mockSupabase
-          .from('saved_jobs')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('job_id', jobId);
-          
-        // Update local state
+        // Unsave job
         setSavedJobs(prev => {
           const updated = new Set(prev);
           updated.delete(jobId);
@@ -253,18 +229,6 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toast.success("Job removed from saved jobs");
       } else {
         // Save job
-        const savedJob = {
-          user_id: user.id,
-          job_id: jobId,
-          saved_at: new Date().toISOString()
-        };
-        
-        // Using mockSupabase for now
-        await mockSupabase
-          .from('saved_jobs')
-          .insert([savedJob]);
-          
-        // Update local state
         setSavedJobs(prev => new Set([...prev, jobId]));
         toast.success("Job saved successfully");
       }

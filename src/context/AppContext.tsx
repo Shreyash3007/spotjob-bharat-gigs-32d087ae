@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState } from "react";
 import { User } from "../types";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { UserProfileProvider } from "./UserProfileContext";
 import { JobProvider } from "./JobContext";
 import useNetworkStatus from "@/hooks/useNetworkStatus";

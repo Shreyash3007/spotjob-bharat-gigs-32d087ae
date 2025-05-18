@@ -7,10 +7,10 @@ import { JobPost } from "@/types";
 import { MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { mockSupabase } from "@/integrations/supabase/client"; // Use mockSupabase for now
+import { mockSupabase } from "@/integrations/supabase/mockClient";
 
 interface JobCardProps {
   job: JobPost;
@@ -24,7 +24,7 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
   const [hasApplied, setHasApplied] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<"left" | "right" | null>(null);
 
-  const categoryColors = {
+  const categoryColors: Record<string, string> = {
     delivery: "bg-blue-100 text-blue-800",
     tutoring: "bg-green-100 text-green-800",
     tech: "bg-purple-100 text-purple-800",
@@ -34,7 +34,7 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
     other: "bg-gray-100 text-gray-800",
   };
 
-  const payTypeDisplay = {
+  const payTypeDisplay: Record<string, string> = {
     hourly: "/hr",
     daily: "/day",
     fixed: " total"
@@ -59,16 +59,17 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
       };
       
       // Using mockSupabase until database types are updated
-      await mockSupabase
+      mockSupabase
         .from('job_applications')
-        .insert([application]);
-        
-      setHasApplied(true);
-      toast.success("Application sent! The employer can now contact you.");
+        .insert([application])
+        .then(() => {
+          setHasApplied(true);
+          toast.success("Application sent! The employer can now contact you.");
+          setIsApplying(false);
+        });
     } catch (error) {
       console.error("Error applying to job:", error);
       toast.error("Failed to apply for this job. Please try again.");
-    } finally {
       setIsApplying(false);
     }
   };
@@ -118,15 +119,15 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
   const getPayAmount = () => {
     if (typeof job.pay === 'number') {
       return job.pay;
-    } else if (typeof job.pay === 'object' && job.pay && 'amount' in job.pay) {
-      return job.pay.amount;
+    } else if (typeof job.pay === 'object' && job.pay) {
+      return job.pay && 'amount' in job.pay ? job.pay.amount : 'N/A';
     }
     return 'N/A';
   };
 
   const getPayType = () => {
-    if (typeof job.pay === 'object' && job.pay && 'type' in job.pay) {
-      return job.pay.type as 'hourly' | 'daily' | 'fixed';
+    if (typeof job.pay === 'object' && job.pay) {
+      return job.pay && 'type' in job.pay ? job.pay.type as string : 'hourly';
     }
     return 'hourly';
   };
@@ -168,7 +169,7 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
             </div>
             <Badge 
               variant="outline" 
-              className={`${categoryColors[job.category]} border-0`}
+              className={`${job.category && categoryColors[job.category] || categoryColors.other} border-0`}
             >
               {job.category}
             </Badge>
@@ -196,7 +197,7 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-1">
-                <span className="text-sm font-medium">{job.posterName}</span>
+                <span className="text-sm font-medium">{job.posterName || "Unknown"}</span>
                 {isVerified() && (
                   <span className="bg-blue-100 text-blue-600 text-xs px-1 rounded">✓</span>
                 )}
