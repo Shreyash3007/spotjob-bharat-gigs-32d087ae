@@ -40,7 +40,7 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
     fixed: " total"
   };
 
-  const handleApply = async () => {
+  const handleApply = () => {
     if (!user) {
       toast.error("Please log in to apply for jobs");
       return;
@@ -110,7 +110,10 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
   // Get address from location object
   const getAddress = () => {
     if (typeof job.location === 'object' && job.location) {
-      return 'address' in job.location ? job.location.address : 'Location unavailable';
+      if ('address' in job.location) {
+        return job.location.address as string;
+      }
+      return 'Location unavailable';
     }
     return 'Location unavailable';
   };
@@ -120,14 +123,18 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
     if (typeof job.pay === 'number') {
       return job.pay;
     } else if (typeof job.pay === 'object' && job.pay) {
-      return job.pay && 'amount' in job.pay ? job.pay.amount : 'N/A';
+      if (job.pay && 'amount' in job.pay) {
+        return (job.pay as any).amount;
+      }
     }
     return 'N/A';
   };
 
   const getPayType = () => {
     if (typeof job.pay === 'object' && job.pay) {
-      return job.pay && 'type' in job.pay ? job.pay.type as string : 'hourly';
+      if (job.pay && 'type' in job.pay) {
+        return (job.pay as any).type as string;
+      }
     }
     return 'hourly';
   };
@@ -193,7 +200,7 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
           <div className="flex items-center gap-2">
             <Avatar className="h-8 w-8">
               <AvatarImage src={job.posterAvatar} />
-              <AvatarFallback>{job.posterName?.charAt(0) || "U"}</AvatarFallback>
+              <AvatarFallback>{job.posterName && job.posterName.charAt(0) || "U"}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-center gap-1">
@@ -204,7 +211,7 @@ const JobCard = ({ job, onSwipe, swipeable = false }: JobCardProps) => {
               </div>
               <div className="flex items-center">
                 <span className="text-xs text-yellow-500">★</span>
-                <span className="text-xs ml-0.5">{getRating().toString()}</span>
+                <span className="text-xs ml-0.5">{getRating()}</span>
               </div>
             </div>
             <span className="text-xs text-gray-500">

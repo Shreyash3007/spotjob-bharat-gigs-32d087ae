@@ -1,150 +1,277 @@
 
-import { JobPost, User } from "../types";
+import { JobPost, User, JobApplication, JobFilter, JobCategory } from "../types";
 
-// Central Pune coordinates as base
-const PUNE_CENTER = {
-  lat: 18.5204, 
-  lng: 73.8567
-};
-
-// Generate random coordinates within a certain radius of Pune
-const getRandomLocation = (radiusKm: number = 5) => {
-  // 0.01 degrees is roughly 1km
-  const degreeOffset = (radiusKm / 100) * (Math.random() - 0.5);
-  return {
-    lat: PUNE_CENTER.lat + degreeOffset,
-    lng: PUNE_CENTER.lng + degreeOffset * 1.5,
-  };
-};
-
+// Mock user data
 export const mockUsers: User[] = [
   {
-    id: "u1",
-    name: "Arjun Sharma",
-    phone: "+91 9876543210",
-    location: PUNE_CENTER,
+    id: "user1",
+    name: "Rahul Sharma",
+    phone: "+919876543210",
+    email: "rahul.sharma@example.com",
+    location: {
+      lat: 18.5204,
+      lng: 73.8567
+    },
     rating: 4.8,
     verified: true,
-    avatar: "https://randomuser.me/api/portraits/men/1.jpg"
+    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
+    skills: ["delivery", "driver"],
+    verificationLevel: "phone",
   },
   {
-    id: "u2",
+    id: "user2",
     name: "Priya Patel",
-    phone: "+91 8765432109",
-    location: getRandomLocation(2),
-    rating: 4.5,
-    verified: true,
-    avatar: "https://randomuser.me/api/portraits/women/2.jpg"
-  },
-  {
-    id: "u3",
-    name: "Rahul Verma",
-    phone: "+91 7654321098",
-    location: getRandomLocation(3),
-    rating: 4.2,
-    verified: false,
-    avatar: "https://randomuser.me/api/portraits/men/3.jpg"
-  },
-  {
-    id: "u4",
-    name: "Meera Kapoor",
-    phone: "+91 6543210987",
-    location: getRandomLocation(4),
+    phone: "+917654321098",
+    email: "priya.patel@example.com",
+    location: {
+      lat: 18.5314,
+      lng: 73.8446
+    },
     rating: 4.9,
     verified: true,
-    avatar: "https://randomuser.me/api/portraits/women/4.jpg"
+    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
+    skills: ["teaching", "math"],
+    verificationLevel: "email",
   },
   {
-    id: "u5",
-    name: "Vikram Singh",
-    phone: "+91 5432109876",
-    location: getRandomLocation(2.5),
-    rating: 3.8,
+    id: "user3",
+    name: "Amit Kumar",
+    phone: "+918765432109",
+    email: "amit.kumar@example.com",
+    location: {
+      lat: 18.5097,
+      lng: 73.8282
+    },
+    rating: 3.7,
     verified: false,
-    avatar: "https://randomuser.me/api/portraits/men/5.jpg"
+    avatar: "https://randomuser.me/api/portraits/men/55.jpg",
+    skills: ["programming", "web"],
+    verificationLevel: "none",
+  },
+  {
+    id: "user4",
+    name: "Neha Singh",
+    phone: "+916543210987",
+    email: "neha.singh@example.com",
+    location: {
+      lat: 18.5587,
+      lng: 73.9154
+    },
+    rating: 4.5,
+    verified: true,
+    avatar: "https://randomuser.me/api/portraits/women/22.jpg",
+    skills: ["childcare", "cooking"],
+    verificationLevel: "phone",
+  },
+  {
+    id: "user5",
+    name: "Vijay Reddy",
+    phone: "+915432109876",
+    email: "vijay.reddy@example.com",
+    location: {
+      lat: 18.4743,
+      lng: 73.8673
+    },
+    rating: 4.2,
+    verified: false,
+    avatar: "https://randomuser.me/api/portraits/men/67.jpg",
+    skills: ["cleaning", "gardening"],
+    verificationLevel: "none",
   }
 ];
 
-// Function to get a randomized location address
-const getAddress = () => {
-  const streets = [
-    "MG Road", "FC Road", "JM Road", "Baner Road", "Aundh Road", 
-    "Karve Road", "SB Road", "Laxmi Road", "Deccan", "Kothrud"
-  ];
-  const localities = [
-    "Shivajinagar", "Kothrud", "Aundh", "Baner", "Viman Nagar", 
-    "Koregaon Park", "Camp", "Hadapsar", "Kharadi", "Hinjewadi"
-  ];
-  const street = streets[Math.floor(Math.random() * streets.length)];
-  const locality = localities[Math.floor(Math.random() * localities.length)];
-  return `${Math.floor(Math.random() * 100) + 1}, ${street}, ${locality}, Pune`;
-};
-
-// Function to generate a random job post
-const generateRandomJob = (id: string): JobPost => {
-  const jobTypes = [
-    { title: "Food Delivery Partner", category: "delivery" },
-    { title: "Mathematics Tutor", category: "tutoring" },
-    { title: "Website Developer", category: "tech" },
-    { title: "Evening Babysitter", category: "babysitting" },
-    { title: "House Cleaner", category: "housekeeping" },
-    { title: "Event Support Staff", category: "event" },
-    { title: "Gardening Helper", category: "other" },
-  ];
-  
-  const jobTypeIndex = Math.floor(Math.random() * jobTypes.length);
-  const selectedJob = jobTypes[jobTypeIndex];
-  
-  const descriptions = [
-    `Looking for a reliable ${selectedJob.title.toLowerCase()} to help with daily tasks.`,
-    `Need an experienced ${selectedJob.title.toLowerCase()} for a short assignment.`,
-    `Urgent requirement for a ${selectedJob.title.toLowerCase()} in my neighborhood.`,
-    `Seeking a skilled ${selectedJob.title.toLowerCase()} for a one-time project.`,
-    `Part-time ${selectedJob.title.toLowerCase()} needed for a few hours daily.`
-  ];
-  
-  const durations = ["1 day", "2-3 days", "1 week", "2 weeks", "1 month"];
-  const payTypes = ["hourly", "fixed", "daily"] as const;
-  
-  const randomUser = mockUsers[Math.floor(Math.random() * mockUsers.length)];
-  const location = getRandomLocation();
-  
-  return {
-    id,
-    title: selectedJob.title,
-    description: descriptions[Math.floor(Math.random() * descriptions.length)],
+// Mock job listings
+export const mockJobs: JobPost[] = [
+  {
+    id: "job1",
+    title: "Delivery Driver Needed",
+    description: "Looking for a reliable delivery driver for food delivery within 5km radius. Must have own vehicle (bike/scooter). 3 hours shift during dinner time.",
+    category: "delivery",
+    skills: ["driving", "punctual", "local-knowledge"],
+    pay: 400,
+    payType: "hourly",
+    duration: "3 hours",
     location: {
-      lat: location.lat,
-      lng: location.lng,
-      address: getAddress(),
+      lat: 18.5204,
+      lng: 73.8567
     },
-    pay: {
-      amount: Math.floor(Math.random() * 800) + 200, // Random pay between 200-1000 INR
-      type: payTypes[Math.floor(Math.random() * payTypes.length)],
+    postedBy: {
+      id: "user2",
+      name: "Priya Patel",
+      verificationLevel: "email"
     },
-    category: selectedJob.category as any,
-    duration: durations[Math.floor(Math.random() * durations.length)],
-    posterId: randomUser.id,
-    posterName: randomUser.name,
-    posterRating: randomUser.rating,
-    posterVerified: randomUser.verified,
-    posterAvatar: randomUser.avatar,
-    timestamp: Date.now() - Math.floor(Math.random() * 604800000), // Random timestamp within the last week
-    status: "open",
-  };
+    postedDate: "2023-07-01T10:00:00Z",
+    timestamp: new Date("2023-07-01T10:00:00Z").getTime(),
+    posterId: "user2",
+    posterName: "Priya's Restaurant",
+    posterRating: 4.7,
+    posterVerified: true,
+    posterAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
+    status: "open"
+  },
+  {
+    id: "job2",
+    title: "Math Tutor for 10th Grade Student",
+    description: "Need a qualified math tutor for my daughter who is in 10th grade. Focus on algebra and geometry. Twice a week, 1.5 hours each session. Looking for someone with teaching experience.",
+    category: "tutoring",
+    skills: ["math", "teaching", "patience"],
+    pay: 600,
+    payType: "hourly",
+    duration: "Ongoing, 3 hours/week",
+    location: {
+      lat: 18.5314,
+      lng: 73.8446
+    },
+    postedBy: {
+      id: "user3",
+      name: "Amit Kumar",
+      verificationLevel: "none"
+    },
+    postedDate: "2023-07-02T14:30:00Z",
+    timestamp: new Date("2023-07-02T14:30:00Z").getTime(),
+    posterId: "user3",
+    posterName: "Amit Kumar",
+    posterRating: 4.2,
+    posterVerified: false,
+    posterAvatar: "https://randomuser.me/api/portraits/men/55.jpg",
+    status: "open"
+  },
+  {
+    id: "job3",
+    title: "Web Developer Needed for Small Business Site",
+    description: "Need a web developer to create a simple website for my small business. Should include 5-6 pages with contact form, gallery, and about us section. Looking for someone who can complete this within 1-2 weeks.",
+    category: "tech",
+    skills: ["html", "css", "javascript", "responsive-design"],
+    pay: 15000,
+    payType: "fixed",
+    duration: "1-2 weeks",
+    location: {
+      lat: 18.5097,
+      lng: 73.8282
+    },
+    postedBy: {
+      id: "user5",
+      name: "Vijay Reddy",
+      verificationLevel: "none"
+    },
+    postedDate: "2023-07-03T09:15:00Z",
+    timestamp: new Date("2023-07-03T09:15:00Z").getTime(),
+    posterId: "user5",
+    posterName: "Reddy Enterprises",
+    posterRating: 3.9,
+    posterVerified: true,
+    status: "open"
+  },
+  {
+    id: "job4",
+    title: "Babysitter for Weekend Evening",
+    description: "Looking for a babysitter for my 6-year-old son this Saturday evening from 6pm to 10pm. Experience with children required. References preferred.",
+    category: "babysitting",
+    skills: ["childcare", "responsible", "first-aid-knowledge"],
+    pay: 500,
+    payType: "hourly",
+    duration: "4 hours, one-time",
+    location: {
+      lat: 18.5587,
+      lng: 73.9154
+    },
+    postedBy: {
+      id: "user1",
+      name: "Rahul Sharma",
+      verificationLevel: "phone"
+    },
+    postedDate: "2023-07-04T18:20:00Z",
+    timestamp: new Date("2023-07-04T18:20:00Z").getTime(),
+    posterId: "user1",
+    posterName: "Rahul Sharma",
+    posterRating: 4.8,
+    posterVerified: true,
+    posterAvatar: "https://randomuser.me/api/portraits/men/32.jpg",
+    status: "open"
+  }
+];
+
+// Additional exports to make the mock data more complete
+export const mockApplications: JobApplication[] = [
+  {
+    id: "app1",
+    jobId: "job1",
+    applicantId: "user3",
+    message: "I have a reliable bike and know the area well. Available for evening shifts.",
+    timestamp: "2023-07-01T15:45:00Z",
+    status: "pending"
+  },
+  {
+    id: "app2",
+    jobId: "job2",
+    applicantId: "user1",
+    message: "I've tutored math for 3 years and have experience with 10th grade curriculum.",
+    timestamp: "2023-07-02T16:10:00Z",
+    status: "accepted"
+  },
+  {
+    id: "app3",
+    jobId: "job3",
+    applicantId: "user2",
+    message: "I've built several business websites with all the features you're looking for.",
+    timestamp: "2023-07-03T11:30:00Z",
+    status: "pending"
+  }
+];
+
+// Initial filter state that can be used in components
+export const initialJobFilter: JobFilter = {
+  category: undefined,
+  distance: 10,
+  payMin: undefined,
+  payMax: undefined,
+  sortBy: "newest"
 };
 
-// Generate 20 random job posts
-export const mockJobs: JobPost[] = Array.from({ length: 20 }, (_, i) =>
-  generateRandomJob(`job-${i + 1}`)
-);
-
-export const currentUser: User = {
-  id: "current-user",
-  name: "Ravi Kumar",
-  phone: "+91 9998887776",
-  location: PUNE_CENTER,
-  rating: 4.6,
-  verified: true,
-  avatar: "https://randomuser.me/api/portraits/men/36.jpg"
+// Function to create a filtered version of the job listings based on filters
+export const getFilteredJobs = (filters: JobFilter): JobPost[] => {
+  let filtered = [...mockJobs];
+  
+  // Apply category filter
+  if (filters.category && filters.category.length > 0) {
+    filtered = filtered.filter(job => filters.category?.includes(job.category as JobCategory));
+  }
+  
+  // Apply pay range filters
+  if (filters.payMin !== undefined) {
+    filtered = filtered.filter(job => {
+      const payAmount = typeof job.pay === 'number' ? job.pay : 0;
+      return payAmount >= (filters.payMin || 0);
+    });
+  }
+  
+  if (filters.payMax !== undefined) {
+    filtered = filtered.filter(job => {
+      const payAmount = typeof job.pay === 'number' ? job.pay : 0;
+      return payAmount <= (filters.payMax || Infinity);
+    });
+  }
+  
+  // Apply sorting
+  if (filters.sortBy === "newest") {
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.postedDate).getTime();
+      const dateB = new Date(b.postedDate).getTime();
+      return dateB - dateA;
+    });
+  } else if (filters.sortBy === "pay_high_to_low") {
+    filtered.sort((a, b) => {
+      const payA = typeof a.pay === 'number' ? a.pay : 0;
+      const payB = typeof b.pay === 'number' ? b.pay : 0;
+      return payB - payA;
+    });
+  } else if (filters.sortBy === "pay_low_to_high") {
+    filtered.sort((a, b) => {
+      const payA = typeof a.pay === 'number' ? a.pay : 0;
+      const payB = typeof b.pay === 'number' ? b.pay : 0;
+      return payA - payB;
+    });
+  }
+  
+  return filtered;
 };

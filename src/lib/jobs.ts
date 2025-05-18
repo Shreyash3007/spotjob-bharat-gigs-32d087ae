@@ -1,11 +1,10 @@
-import { supabase } from './supabase'
-import type { Database } from '../types/supabase'
-import type { JobFilter } from '../types'
+import { supabase } from './supabase';
+import type { JobFilter } from '../types';
 
-type Job = Database['public']['Tables']['jobs']['Row']
-type JobInsert = Database['public']['Tables']['jobs']['Insert']
-type Application = Database['public']['Tables']['applications']['Row']
-type ApplicationInsert = Database['public']['Tables']['applications']['Insert']
+type Job = Database['public']['Tables']['jobs']['Row'];
+type JobInsert = Database['public']['Tables']['jobs']['Insert'];
+type Application = Database['public']['Tables']['applications']['Row'];
+type ApplicationInsert = Database['public']['Tables']['applications']['Insert'];
 
 export async function fetchJobs(filters?: JobFilter) {
   try {
@@ -21,37 +20,39 @@ export async function fetchJobs(filters?: JobFilter) {
           verified
         )
       `)
-      .eq('status', 'open')
+      .eq('status', 'open');
       
     // Apply filters if provided
     if (filters?.category && filters.category.length > 0) {
-      query = query.in('category', filters.category)
+      query = query.in('category', filters.category);
     }
     
     if (filters?.payMin !== undefined) {
-      query = query.gte('pay->amount', filters.payMin)
+      query = query.gte('pay->amount', filters.payMin);
     }
     
     if (filters?.payMax !== undefined) {
-      query = query.lte('pay->amount', filters.payMax)
+      query = query.lte('pay->amount', filters.payMax);
     }
     
     // Sort by created date (newest) by default
-    if (filters?.sortBy === 'pay') {
-      query = query.order('pay->amount', { ascending: false })
+    if (filters?.sortBy === 'pay_high_to_low') {
+      query = query.order('pay->amount', { ascending: false });
+    } else if (filters?.sortBy === 'pay_low_to_high') {
+      query = query.order('pay->amount', { ascending: true });
     } else {
       // Default sort by newest
-      query = query.order('created_at', { ascending: false })
+      query = query.order('created_at', { ascending: false });
     }
     
-    const { data, error } = await query
+    const { data, error } = await query;
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error fetching jobs:', error)
-    return { data: null, error }
+    console.error('Error fetching jobs:', error);
+    return { data: null, error };
   }
 }
 
@@ -71,14 +72,14 @@ export async function fetchJobById(id: string) {
         )
       `)
       .eq('id', id)
-      .single()
+      .single();
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error fetching job:', error)
-    return { data: null, error }
+    console.error('Error fetching job:', error);
+    return { data: null, error };
   }
 }
 
@@ -88,14 +89,14 @@ export async function createJob(jobData: Omit<JobInsert, 'id' | 'created_at'>) {
       .from('jobs')
       .insert(jobData)
       .select()
-      .single()
+      .single();
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error creating job:', error)
-    return { data: null, error }
+    console.error('Error creating job:', error);
+    return { data: null, error };
   }
 }
 
@@ -106,14 +107,14 @@ export async function updateJobStatus(id: string, status: 'open' | 'filled' | 'e
       .update({ status })
       .eq('id', id)
       .select()
-      .single()
+      .single();
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error updating job status:', error)
-    return { data: null, error }
+    console.error('Error updating job status:', error);
+    return { data: null, error };
   }
 }
 
@@ -123,14 +124,14 @@ export async function applyToJob(applicationData: ApplicationInsert) {
       .from('applications')
       .insert(applicationData)
       .select()
-      .single()
+      .single();
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error applying to job:', error)
-    return { data: null, error }
+    console.error('Error applying to job:', error);
+    return { data: null, error };
   }
 }
 
@@ -143,14 +144,14 @@ export async function fetchApplicationsByUser(userId: string) {
         jobs (*)
       `)
       .eq('applicant_id', userId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error fetching applications:', error)
-    return { data: null, error }
+    console.error('Error fetching applications:', error);
+    return { data: null, error };
   }
 }
 
@@ -170,14 +171,14 @@ export async function fetchApplicationsForJob(jobId: string) {
         )
       `)
       .eq('job_id', jobId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error fetching job applications:', error)
-    return { data: null, error }
+    console.error('Error fetching job applications:', error);
+    return { data: null, error };
   }
 }
 
@@ -188,13 +189,13 @@ export async function updateApplicationStatus(id: string, status: 'pending' | 'a
       .update({ status })
       .eq('id', id)
       .select()
-      .single()
+      .single();
     
-    if (error) throw error
+    if (error) throw error;
     
-    return { data, error: null }
+    return { data, error: null };
   } catch (error) {
-    console.error('Error updating application status:', error)
-    return { data: null, error }
+    console.error('Error updating application status:', error);
+    return { data: null, error };
   }
-} 
+}
