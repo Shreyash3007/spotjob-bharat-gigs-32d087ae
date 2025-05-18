@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isEmailVerified: boolean; 
   signUp: (email: string, password: string, metadata?: {}) => Promise<{ success: boolean; error?: any }>;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: any }>;
   signOut: () => Promise<void>;
@@ -20,6 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
 
   // Initialize auth state
   useEffect(() => {
@@ -28,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setIsEmailVerified(session?.user?.email_confirmed_at ? true : false);
         setIsLoading(false);
 
         // Log auth events for debugging
@@ -39,6 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setIsEmailVerified(session?.user?.email_confirmed_at ? true : false);
       setIsLoading(false);
     });
 
@@ -102,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     session,
     isLoading,
     isAuthenticated: !!user,
+    isEmailVerified,
     signUp,
     signIn,
     signOut,
@@ -111,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = useContext(AdminContext);
   
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");

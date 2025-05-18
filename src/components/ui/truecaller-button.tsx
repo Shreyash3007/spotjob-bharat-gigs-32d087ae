@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "./button";
 import { Loader2 } from "lucide-react";
@@ -17,7 +18,7 @@ declare global {
   }
 }
 
-export interface TruecallerButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface TruecallerButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onError'> {
   onSuccess: (accessToken: string) => void;
   onError: (error: { code: string; message: string }) => void;
   appKey: string;
@@ -119,4 +120,4 @@ export function TruecallerButton({
       )}
     </Button>
   );
-} 
+}

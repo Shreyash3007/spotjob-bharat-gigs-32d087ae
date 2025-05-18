@@ -1,43 +1,25 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AppSettings, UserRole } from "@/types/admin";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
+import { AppSettings, AdminUser } from "@/types/admin";
 
 interface AdminContextType {
   isAdmin: boolean;
   loading: boolean;
   appSettings: AppSettings | null;
-  updateSetting: <K extends keyof AppSettings>(
-    category: K, 
-    value: AppSettings[K]
-  ) => Promise<void>;
-  toggleMaintenanceMode: () => Promise<void>;
-  toggleFeature: (feature: keyof AppSettings['features']) => Promise<void>;
+  updateAppSettings: (key: string, value: any) => Promise<void>;
+  toggleMaintenanceMode: (enabled: boolean, message?: string) => Promise<void>;
+  toggleFeature: (feature: keyof AppSettings['features'], enabled: boolean) => Promise<void>;
 }
-
-const defaultAppSettings: AppSettings = {
-  maintenance_mode: {
-    enabled: false,
-    message: "We are currently performing maintenance. Please check back shortly."
-  },
-  features: {
-    fake_jobs_enabled: false,
-    fake_profiles_enabled: false
-  },
-  app_info: {
-    version: "1.0.0",
-    last_updated: new Date().toISOString().split('T')[0]
-  }
-};
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
 
   // Check if the current user is an admin
@@ -51,17 +33,14 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       try {
         const { data, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .single();
-          
-        if (error) {
-          console.error("Error checking admin status:", error);
-          setIsAdmin(false);
-        } else {
-          setIsAdmin(data !== null);
+          .rpc('is_admin', { user_id: user.id });
+
+        if (error) throw error;
+        setIsAdmin(data || false);
+        
+        // If user is admin, fetch app settings
+        if (data) {
+          await fetchAppSettings();
         }
       } catch (error) {
         console.error("Error checking admin status:", error);
@@ -75,113 +54,103 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [user]);
 
   // Fetch app settings
-  useEffect(() => {
-    const fetchSettings = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('app_settings')
-          .select('key, value');
-          
-        if (error) {
-          console.error("Error fetching app settings:", error);
-          return;
-        }
+  const fetchAppSettings = async () => {
+    try {
+      // Fetch maintenance mode settings
+      const { data: maintenanceData, error: maintenanceError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'maintenance_mode')
+        .single();
 
-        // Transform the settings array into our AppSettings object
-        if (data && data.length > 0) {
-          const settings = data.reduce<Record<string, any>>((acc, item) => {
-            acc[item.key] = item.value;
-            return acc;
-          }, {});
-          
-          setAppSettings({
-            maintenance_mode: settings.maintenance_mode || defaultAppSettings.maintenance_mode,
-            features: settings.features || defaultAppSettings.features,
-            app_info: settings.app_info || defaultAppSettings.app_info
-          });
-        } else {
-          // Use default settings if none exist
-          setAppSettings(defaultAppSettings);
-        }
-      } catch (error) {
-        console.error("Error fetching app settings:", error);
-      }
-    };
+      if (maintenanceError) throw maintenanceError;
 
-    if (isAdmin) {
-      fetchSettings();
+      // Fetch features settings
+      const { data: featuresData, error: featuresError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'features')
+        .single();
+
+      if (featuresError) throw featuresError;
+
+      // Fetch app info
+      const { data: appInfoData, error: appInfoError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'app_info')
+        .single();
+
+      if (appInfoError) throw appInfoError;
+
+      // Combine settings
+      const settings: AppSettings = {
+        maintenance_mode: maintenanceData.value as AppSettings['maintenance_mode'],
+        features: featuresData.value as AppSettings['features'],
+        app_info: appInfoData.value as AppSettings['app_info'],
+      };
+
+      setAppSettings(settings);
+    } catch (error) {
+      console.error("Error fetching app settings:", error);
+      toast.error("Failed to load app settings");
     }
-  }, [user, isAdmin]);
+  };
 
-  // Update a specific setting category
-  const updateSetting = async <K extends keyof AppSettings>(
-    category: K, 
-    value: AppSettings[K]
-  ): Promise<void> => {
-    if (!isAdmin || !user) {
-      toast.error("You don't have permission to update settings");
-      return;
-    }
-
+  // Update app settings
+  const updateAppSettings = async (key: string, value: any) => {
+    if (!isAdmin || !user) return;
+    
     try {
       const { error } = await supabase
         .from('app_settings')
-        .update({ value, updated_by: user.id, updated_at: new Date().toISOString() })
-        .eq('key', category);
-
-      if (error) {
-        console.error(`Error updating ${String(category)} setting:`, error);
-        toast.error(`Failed to update ${String(category)} setting`);
-        return;
-      }
-
-      // Update local state
-      setAppSettings(prev => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          [category]: value
-        };
-      });
+        .update({ 
+          value,
+          updated_at: new Date().toISOString(),
+          updated_by: user.id
+        })
+        .eq('key', key);
       
-      toast.success(`${String(category).replace('_', ' ')} setting updated`);
+      if (error) throw error;
+      
+      // Update local state
+      await fetchAppSettings();
+      toast.success("Settings updated successfully");
     } catch (error) {
-      console.error(`Error updating ${String(category)} setting:`, error);
-      toast.error(`Failed to update ${String(category)} setting`);
+      console.error(`Error updating ${key} settings:`, error);
+      toast.error(`Failed to update settings`);
     }
   };
 
   // Toggle maintenance mode
-  const toggleMaintenanceMode = async (): Promise<void> => {
+  const toggleMaintenanceMode = async (enabled: boolean, message?: string) => {
     if (!appSettings) return;
     
-    const newMaintenanceSetting = {
-      ...appSettings.maintenance_mode,
-      enabled: !appSettings.maintenance_mode.enabled
+    const updatedValue = {
+      enabled,
+      message: message || appSettings.maintenance_mode.message
     };
     
-    await updateSetting('maintenance_mode', newMaintenanceSetting);
+    await updateAppSettings('maintenance_mode', updatedValue);
   };
 
-  // Toggle a feature
-  const toggleFeature = async (feature: keyof AppSettings['features']): Promise<void> => {
+  // Toggle feature
+  const toggleFeature = async (feature: keyof AppSettings['features'], enabled: boolean) => {
     if (!appSettings) return;
     
-    const newFeatures = {
+    const updatedFeatures = {
       ...appSettings.features,
-      [feature]: !appSettings.features[feature]
+      [feature]: enabled
     };
     
-    await updateSetting('features', newFeatures);
+    await updateAppSettings('features', updatedFeatures);
   };
-
+  
   const value = {
     isAdmin,
     loading,
     appSettings,
-    updateSetting,
+    updateAppSettings,
     toggleMaintenanceMode,
     toggleFeature
   };

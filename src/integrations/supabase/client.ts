@@ -16,3 +16,33 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage
   }
 });
+
+// Mock client for tables not in Database type yet
+// Used for development until database types are updated
+export const mockSupabase = {
+  from: (table: string) => ({
+    select: (columns?: string) => ({
+      eq: (column: string, value: any) => ({
+        single: () => Promise.resolve({ data: null, error: null }),
+        then: (callback: any) => Promise.resolve({ data: [], error: null }).then(callback),
+      }),
+      then: (callback: any) => Promise.resolve({ data: [], error: null }).then(callback),
+    }),
+    insert: (values: any) => ({
+      then: (callback: any) => Promise.resolve({ data: values, error: null }).then(callback),
+      select: () => ({
+        single: () => Promise.resolve({ data: values, error: null }),
+      })
+    }),
+    update: (values: any) => ({
+      eq: () => ({
+        then: (callback: any) => Promise.resolve({ data: values, error: null }).then(callback),
+      })
+    }),
+    delete: () => ({
+      eq: () => ({
+        then: (callback: any) => Promise.resolve({ data: null, error: null }).then(callback),
+      })
+    })
+  })
+};

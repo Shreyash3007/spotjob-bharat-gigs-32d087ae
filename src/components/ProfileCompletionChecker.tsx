@@ -1,7 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
-import { PROFILE_FIELDS } from "@/context/AppContext";
 import { 
   Dialog, 
   DialogContent, 
@@ -42,6 +42,19 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
     if (!userProfile) return {};
     
     const statuses: Record<string, boolean> = {};
+    const PROFILE_FIELDS = {
+      name: 15,
+      phone: 10,
+      email: 10,
+      address: 10,
+      dateOfBirth: 5,
+      skills: 10,
+      profilePicture: 10,
+      bio: 10,
+      education: 10,
+      workExperience: 5,
+      idVerification: 15
+    };
     
     Object.entries(PROFILE_FIELDS).forEach(([field]) => {
       if (field === 'skills') {
@@ -101,7 +114,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
           </div>
           
           <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-            {Object.entries(PROFILE_FIELDS).map(([field, weight]) => (
+            {Object.entries(fieldLabels).map(([field, label]) => (
               <motion.div 
                 key={field}
                 className={`flex items-center justify-between p-3 rounded-lg border ${
@@ -124,9 +137,9 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
                     )}
                   </div>
                   <div>
-                    <div className="font-medium">{fieldLabels[field]}</div>
+                    <div className="font-medium">{label}</div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
-                      {weight}% of profile completion
+                      Required for profile completion
                     </div>
                   </div>
                 </div>
@@ -157,4 +170,4 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
       {children}
     </>
   );
-}; 
+};
